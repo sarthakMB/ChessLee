@@ -1,4 +1,4 @@
 export default function (req, res, next) { 
-    console.log(req.method, req.url);
+    console.log("Request: =================================================================== ",req.method, req.url);
     next();
 }
