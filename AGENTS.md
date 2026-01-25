@@ -77,10 +77,10 @@ This project uses a structured documentation approach:
 | File | Purpose |
 |------|---------|
 | `CLAUDE.md` / `AGENTS.md` | **Project-level context** - Tech stack, architecture, commands, key decisions |
-| `PLAN.md` | **Current work** - Active plan/feature being implemented |
-| `.claude/docs/roadmap.md` | Long-term development roadmap |
+| `PLAN.md` | **Current work** - Active plan/feature being implemented (private, not committed) |
+| `.claude/private/roadmap.md` | Long-term development roadmap (private, not committed) |
 | `.claude/docs/architectural_patterns.md` | Design patterns and conventions |
-| `.claude/plans/` | Archived/detailed implementation plans |
+| `.claude/private/plans/` | Archived/detailed implementation plans (private, not committed) |
 
 **Rule**: CLAUDE.md and AGENTS.md contain stable, high-level project info. PLAN.md tracks the current focus and changes frequently. PLAN.md should **ALWAYS** have the plan in checkboxes (so that it is easy to track what is done and what is pending).
 
@@ -92,8 +92,8 @@ Check these files for deeper context:
 
 | Topic | File |
 |-------|------|
-| **Current implementation plan** | `PLAN.md` |
-| **Development roadmap & TODOs** | `.claude/docs/roadmap.md` |
+| **Current implementation plan** | `PLAN.md` (private) |
+| **Development roadmap & TODOs** | `.claude/private/roadmap.md` (private) |
 | Design patterns & conventions | `.claude/docs/architectural_patterns.md` |
 
 ---
