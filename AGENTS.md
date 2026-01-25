@@ -81,8 +81,11 @@ This project uses a structured documentation approach:
 | `.claude/private/roadmap.md` | Long-term development roadmap (private, not committed) |
 | `.claude/docs/architectural_patterns.md` | Design patterns and conventions |
 | `.claude/private/plans/` | Archived/detailed implementation plans (private, not committed) |
+| `.claude/learnings/` | Debugging war stories and lessons learned |
 
 **Rule**: CLAUDE.md and AGENTS.md contain stable, high-level project info. PLAN.md tracks the current focus and changes frequently. PLAN.md should **ALWAYS** have the plan in checkboxes (so that it is easy to track what is done and what is pending).
+
+**Learnings**: When the user asks something similar to "add the learning to .claude/learnings" or "lets document this learning", create a markdown file in the format `yyyymmdd-<short-learning-name>.md` (example : `20260126-orphan-process-debugging.md`) and add it to `.claude/learnings/`.
 
 ---
 

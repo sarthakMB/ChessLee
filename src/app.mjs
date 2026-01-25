@@ -10,7 +10,7 @@ import loginRouter from './routes/login.mjs';
 import registerRouter from './routes/register.mjs';
 import gameRouter from './routes/game.mjs';
 
-// import requestLogger from '../utils/request_logger.mjs';
+import requestLogger from '../utils/request_logger.mjs';
 import { redisClient, initDatabases } from '../db/index.mjs';
 
 dotenv.config();
@@ -24,7 +24,7 @@ app.set('view engine', 'ejs');
 const port = process.env.PORT ?? 3000;
 const sessionSecret = process.env.SESSION_SECRET ?? 'dev-secret';
 
-// app.use(requestLogger);
+app.use(requestLogger);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
