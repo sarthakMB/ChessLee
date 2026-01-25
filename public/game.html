@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess - Modern & Minimal</title>
+
+  <!-- Tailwind CDN -->
+  <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+
+  <!-- Chessboard.js CSS -->
+  <!-- <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css"> -->
+  <link rel="stylesheet" href="/css/chessboard-1.0.0.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/output.css">
+  <link rel="stylesheet" href="/css/style.css">
+
+</head>
+
+<body>
+
+  <!-- Outer Container -->
+  <div class="flex flex-col lg:flex-row lg:h-screen lg:overflow-hidden bg-neutral-700 gap-5">
+
+    <!-- Side Bar -->
+    <aside
+      class="flex flex-row lg:flex-col w-full lg:h-full lg:w-30 lg:overflow-y-auto"
+      hx-get="/partials/sidebar.html"
+      hx-trigger="load"
+      hx-swap="outerHTML"
+    >
+      <div class="w-full text-center text-gray-500 py-10 bg-neutral-800 rounded-xl">
+        Loading sidebar...
+      </div>
+    </aside>
+
+    <!-- Main Chess Area -->
+    <!-- <main class="relative min-h-screen flex flex-col items-center justify-center z-10 p-4"> -->
+    <main class="flex-3 h-full flex overflow-hidden">
+
+      <!-- Glass Container -->
+      <div class="w-full p-[30px] flex flex-1 flex-col items-center gap-3">
+
+        <!-- Opponent Info -->
+        <div class="w-full max-w-[600px] bg-neutral-800/50 rounded-lg p-2 flex items-center justify-between gap-4 px-4">
+          <!-- Profile -->
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-zinc-600/50 flex items-center justify-center text-2xl">
+              O
+            </div>
+            <div class="flex flex-col">
+              <span class="text-white font-bold text-lg">Opponent</span>
+              <span class="text-gray-400 text-sm">Rating: 1200</span>
+            </div>
+          </div>
+          <div id="black-sword" class="text-4xl select-none rounded-full p-1 hover:cursor-pointer">
+            ⚔️ 
+          </div>
+          <!-- Timer -->
+          <div class="flex items-center gap-2">
+            <div class="bg-zinc-800/70 rounded-lg px-4 py-2 min-w-[80px] text-center">
+              <div class="text-white font-mono font-bold text-xl" id="opponent-timer">10:00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Board Container -->
+        <div class="w-full max-w-[600px] aspect-square relative group">
+          <!-- Glow effect -->
+          <!-- <div
+            class="absolute -inset-1 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200">
+          </div> -->
+
+          <!-- The Board -->
+          <div id="myBoard" class="relative w-full h-full ">
+          </div>
+        </div>
+
+        <!-- My Info -->
+        <div class="w-full max-w-[600px] bg-neutral-800/50 rounded-lg p-2 flex items-center justify-between gap-4 px-4">
+          <!-- Profile -->
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-lime-700/30 flex items-center justify-center text-2xl">
+              Y
+            </div>
+            <div class="flex flex-col">
+              <span class="text-white font-bold text-lg">You</span>
+              <span class="text-gray-400 text-sm">Rating: 1200</span>
+            </div>
+          </div>
+
+          <div id="white-sword" class="text-4xl select-none rounded-full p-1 hover:cursor-pointer">
+            ⚔️ 
+          </div>
+          <!-- Timer -->
+          <div class="flex items-center gap-2">
+            <div class="bg-zinc-800/70 rounded-lg px-4 py-2 min-w-[80px] text-center">
+              <div class="text-white font-mono font-bold text-xl" id="my-timer">10:00</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Chat Panel -->
+    <section class="flex flex-2 p-2 flex-col h-full overflow-y-auto">
+      <div class="w-full p-[10px] rounded-xl bg-zinc-800 flex flex-1 flex-col items-center gap-2 overflow-y-auto">
+
+        <!-- Chat Area -->
+        <div class="flex-1 w-full rounded-lg p-4">
+          <h3 class="text-gray-400 font-bold mb-2">Chat</h3>
+        </div>
+
+        <!-- Game Info Area -->
+        <div class="flex-1 w-full bg-neutral-900/50 rounded-lg p-4 overflow-y-auto">
+          <h3 class="text-gray-400 font-bold mb-2">Game Info</h3>
+          <ol id="move-history" class="space-y-1">
+            <!-- sample row -->
+            <!-- <li class="grid grid-cols-[1fr_2fr_4fr] items-center px-3 py-1">
+              <span class="text-gray-400">1.</span>
+              <span>e3</span>
+              <span>e5</span>
+            </li> -->
+
+          </ol>
+        </div>
+
+        <!-- Buttons Area -->
+        <div class="w-full bg-neutral-900/50 rounded-lg p-4 flex flex-col gap-2">
+          <h3 class="text-gray-400 font-bold text-sm mb-1">Actions</h3>
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="flex-1 min-w-[100px] rounded-lg px-4 py-2 bg-red-600/50 hover:bg-red-500/60 font-bold transition text-sm"
+              id="resign-btn"
+            >
+              Resign
+            </button>
+            <button
+              type="button"
+              class="flex-1 min-w-[100px] rounded-lg px-4 py-2 bg-zinc-600/50 hover:bg-zinc-500/60 font-bold transition text-sm"
+              id="offer-draw-btn"
+            >
+              Offer Draw
+            </button>
+            <button
+              type="button"
+              class="flex-1 min-w-[100px] rounded-lg px-4 py-2 bg-lime-600/50 hover:bg-lime-500/60 font-bold transition text-sm"
+              id="reset-game-btn"
+            >
+              Reset Game
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+
+
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+  <!-- jQuery (Required for Chessboard.js) -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+  <!-- Chessboard.js -->
+  <!-- <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script> -->
+  <script src="/js/chessboard-1.0.0.js"></script>
+  <script type="module" src="/js/chess.js"></script>
+
+  <script type="module" src="/js/game.js"></script>
+</body>
+
+</html>

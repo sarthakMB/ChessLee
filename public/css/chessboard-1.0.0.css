@@ -1,0 +1,75 @@
+/*! chessboard.js v1.0.0 | (c) 2019 Chris Oakman | MIT License chessboardjs.com/license */
+
+.clearfix-7da63 {
+  clear: both;
+}
+
+.board-b72b1 {
+  background-color: oklch(0.400 0 0);
+  border: 2px solid #404040;
+  box-sizing: content-box;
+  /* box-shadow: 0 0 5px rgba(34, 197, 94, 0.5); */
+  border-radius: 4px;
+  /* animation: pulse-green-shadow 6s infinite linear; */
+}
+
+/* @keyframes pulse-green-shadow {
+  0% {
+    box-shadow: 0 0 90px rgba(34, 197, 94, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 60px rgba(34, 197, 94, 0.3);
+  }
+
+  100% {
+    box-shadow: 0 0 90px rgba(34, 197, 94, 0.5);
+  }
+} */
+
+.square-55d63 {
+  float: left;
+  position: relative;
+
+  /* disable any native browser highlighting */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.white-1e1d7 {
+  background-color: #565;
+  color: #777;
+  border-radius: 4px;
+}
+
+.black-3c85d {
+  background-color: oklch(0.400 0 0);
+  color: #777;
+  border-radius: 4px;
+}
+
+.highlight1-32417,
+.highlight2-9c5d2 {
+  box-shadow: inset 0 0 4px 4px rgba(30, 190, 90, 0.3);
+}
+
+.notation-322f9 {
+  cursor: default;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  position: absolute;
+}
+
+.alpha-d2270 {
+  bottom: 1px;
+  right: 3px;
+}
+
+.numeric-fc462 {
+  top: 2px;
+  left: 2px;
+}

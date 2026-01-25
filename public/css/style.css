@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&display=swap');
+
+body {
+    font-family: 'Space Grotesk', sans-serif;
+    background-color: #000;
+    color: #fff;
+    margin: 0;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll */
+}
+
+/* Custom scrollbar for a cleaner look if needed inside the container */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(51, 65, 85, 0.8);
+    border-radius: 4px;
+}
+
+/* Ensure pieces are always on top */
+.piece-417db {
+    z-index: 1000;
+}
+
+/* Remove default border from chessboard and force content-box to fix size calculation */
+.board-b72b1 {
+    border: none !important;
+}
+
+/* .square-a8 {
+    border-radius: 4px 0 0 0;
+}
+
+.square-h8 {
+    border-radius: 0 4px 0 0;
+}
+
+.square-h1 {
+    border-radius: 0 0 4px 0;
+}
+
+.square-a1 {
+    border-radius: 0 0 0 4px;
+} */
