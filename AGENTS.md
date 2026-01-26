@@ -83,7 +83,7 @@ This project uses a structured documentation approach:
 | `.claude/private/plans/` | Archived/detailed implementation plans (private, not committed) |
 | `.claude/learnings/` | Debugging war stories and lessons learned |
 
-**Rule**: CLAUDE.md and AGENTS.md contain stable, high-level project info. PLAN.md tracks the current focus and changes frequently. PLAN.md should **ALWAYS** have the plan in checkboxes (so that it is easy to track what is done and what is pending).
+**Rule**: CLAUDE.md and AGENTS.md contain stable, high-level project info. PLAN.md tracks the current focus and changes frequently. PLAN.md should **ALWAYS** have the plan in checkboxes (so that it is easy to track what is done and what is pending). After PLAN.md is done it will be archived in the `.claude/private/plans/` with the format `yyyymmdd-<short-name>-PLAN.md` (example : `20260126-database-integration-PLAN.md`).
 
 **Learnings**: When the user asks something similar to "add the learning to .claude/learnings" or "lets document this learning", create a markdown file in the format `yyyymmdd-<short-learning-name>.md` (example : `20260126-orphan-process-debugging.md`) and add it to `.claude/learnings/`.
 
