@@ -1,0 +1,117 @@
+# Chess App API Tests
+# Use with VS Code REST Client extension
+# Click "Send Request" above each request to execute
+
+@baseUrl = http://localhost:3000
+
+### ===================
+### REGISTRATION
+### ===================
+
+### Register new user (no email)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "secret123"
+}
+
+### Register new user (with email)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "testuser2",
+  "password": "secret123",
+  "email": "test@example.com"
+}
+
+### Register - should fail (duplicate username)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "different123"
+}
+
+### Register - should fail (missing password)
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+  "username": "incomplete"
+}
+
+### ===================
+### LOGIN
+### ===================
+
+### Login with valid credentials
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "secret123"
+}
+
+### Login - should fail (wrong password)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "wrongpassword"
+}
+
+### Login - should fail (non-existent user)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "nonexistent",
+  "password": "secret123"
+}
+
+### Login - should fail (missing fields)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "username": "testuser"
+}
+
+### ===================
+### GAME (for later)
+### ===================
+
+### Create game (computer mode)
+POST {{baseUrl}}/game/create
+Content-Type: application/json
+
+{
+  "mode": "computer"
+}
+
+### Create game (friend mode)
+POST {{baseUrl}}/game/create
+Content-Type: application/json
+
+{
+  "mode": "friend"
+}
+
+### ===================
+### HEALTH CHECKS
+### ===================
+
+### Home page
+GET {{baseUrl}}/
+
+### Login page
+GET {{baseUrl}}/login
+
+### Register page
+GET {{baseUrl}}/register

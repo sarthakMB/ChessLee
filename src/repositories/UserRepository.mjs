@@ -19,21 +19,43 @@ export class UserRepository {
    * @param {string} userObject.username - Username
    * @param {string} userObject.email - Email address
    * @param {string} userObject.password_hash - Bcrypt hashed password
-   * @returns {Promise<Object>} Created user with id and timestamps
+   * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
    */
   async insertUser(userObject) {
     const fields = Object.keys(userObject);
     const values = Object.values(userObject);
     const placeholders = fields.map((_, i) => `$${i + 1}`).join(', ');
 
-    const result = await this.pool.query(
-      `INSERT INTO users (${fields.join(', ')})
-       VALUES (${placeholders})
-       RETURNING *`,
-      values
-    );
+    try {
+      const result = await this.pool.query(
+        `INSERT INTO users (${fields.join(', ')})
+         VALUES (${placeholders})
+         RETURNING *`,
+        values
+      );
 
-    return result.rows[0];
+      return { success: true, data: result.rows[0] };
+    } catch (err) {
+      // Handle expected constraint violations
+      if (err.code === '23505') { // PostgreSQL UNIQUE violation
+        if (err.constraint === 'users_username_key') {
+          return { success: false, error: 'USERNAME_TAKEN' };
+        }
+        if (err.constraint === 'users_email_key') {
+          return { success: false, error: 'EMAIL_TAKEN' };
+        }
+        // Unknown constraint
+        return { success: false, error: 'CONSTRAINT_VIOLATION', constraint: err.constraint };
+      }
+
+      // Handle NOT NULL violations
+      if (err.code === '23502') { // PostgreSQL NOT NULL violation
+        return { success: false, error: 'MISSING_REQUIRED_FIELD', field: err.column };
+      }
+
+      // Unexpected error - bubble up
+      throw err;
+    }
   }
 
   /**

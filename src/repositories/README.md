@@ -1,3 +1,5 @@
+{TODO : This README is not upto date, the idea of using a single "Object" is now changed. Also update method is added}
+
 # Repository Layer
 
 - Repositories encapsulate all database access logic for specific entities. They provide a clean interface between business logic (routes, services) and the PostgreSQL database.

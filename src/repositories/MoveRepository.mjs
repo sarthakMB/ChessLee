@@ -21,21 +21,40 @@ export class MoveRepository {
    * @param {string} moveObject.move_san - Move in SAN notation
    * @param {string} moveObject.move_uci - Move in UCI notation
    * @param {string} moveObject.fen_after - Board state after move
-   * @returns {Promise<Object>} Created move with id and timestamp
+   * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
    */
   async insertMove(moveObject) {
     const fields = Object.keys(moveObject);
     const values = Object.values(moveObject);
     const placeholders = fields.map((_, i) => `$${i + 1}`).join(', ');
 
-    const result = await this.pool.query(
-      `INSERT INTO moves (${fields.join(', ')})
-       VALUES (${placeholders})
-       RETURNING *`,
-      values
-    );
+    try {
+      const result = await this.pool.query(
+        `INSERT INTO moves (${fields.join(', ')})
+         VALUES (${placeholders})
+         RETURNING *`,
+        values
+      );
 
-    return result.rows[0];
+      return { success: true, data: result.rows[0] };
+    } catch (err) {
+      // Handle expected constraint violations
+      if (err.code === '23505') { // PostgreSQL UNIQUE violation
+        if (err.constraint === 'moves_game_id_move_number_key') {
+          return { success: false, error: 'DUPLICATE_MOVE' };
+        }
+        // Unknown constraint
+        return { success: false, error: 'CONSTRAINT_VIOLATION', constraint: err.constraint };
+      }
+
+      // Handle NOT NULL violations
+      if (err.code === '23502') { // PostgreSQL NOT NULL violation
+        return { success: false, error: 'MISSING_REQUIRED_FIELD', field: err.column };
+      }
+
+      // Unexpected error - bubble up
+      throw err;
+    }
   }
 
   /**

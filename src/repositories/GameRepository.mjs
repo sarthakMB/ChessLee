@@ -15,26 +15,55 @@ export class GameRepository {
   /**
    * Insert a new game
    *
+   * Non-nullable columns (from DB schema): id, mode, owner_id, owner_type, owner_color, is_deleted, is_test
+   * Nullable columns (from DB schema): opponent_id, opponent_type, opponent_color, join_code, metadata, created_at, updated_at
+   *
    * @param {Object} gameObject - Object with fields to insert
-   * @param {string} gameObject.mode - Game mode (e.g., 'computer', 'friend')
-   * @param {string} gameObject.owner_id - Owner UUID
-   * @param {string} gameObject.owner_type - 'user' or 'guest'
-   * @param {string} [gameObject.join_code] - Join code for friend games
-   * @returns {Promise<Object>} Created game with id and timestamps
+   * @param {string} gameObject.mode - Game mode (e.g., 'computer', 'friend') - REQUIRED
+   * @param {string} gameObject.owner_id - Owner UUID - REQUIRED
+   * @param {string} gameObject.owner_type - 'user' or 'guest' - REQUIRED
+   * @param {string} gameObject.owner_color - Player color ('white' or 'black') - REQUIRED
+   * @param {boolean} gameObject.is_deleted - Soft delete flag - REQUIRED
+   * @param {boolean} gameObject.is_test - Test data flag - REQUIRED
+   * @param {string} [gameObject.opponent_id] - Opponent UUID - OPTIONAL
+   * @param {string} [gameObject.opponent_type] - 'user' or 'guest' - OPTIONAL
+   * @param {string} [gameObject.opponent_color] - Opponent color ('white' or 'black') - OPTIONAL
+   * @param {string} [gameObject.join_code] - Join code for friend games - OPTIONAL
+   * @param {Object} [gameObject.metadata] - Additional game metadata - OPTIONAL
+   * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
    */
   async insertGame(gameObject) {
     const fields = Object.keys(gameObject);
     const values = Object.values(gameObject);
     const placeholders = fields.map((_, i) => `$${i + 1}`).join(', ');
 
-    const result = await this.pool.query(
-      `INSERT INTO games (${fields.join(', ')})
-       VALUES (${placeholders})
-       RETURNING *`,
-      values
-    );
+    try {
+      const result = await this.pool.query(
+        `INSERT INTO games (${fields.join(', ')})
+         VALUES (${placeholders})
+         RETURNING *`,
+        values
+      );
 
-    return result.rows[0];
+      return { success: true, data: result.rows[0] };
+    } catch (err) {
+      // Handle expected constraint violations
+      if (err.code === '23505') { // PostgreSQL UNIQUE violation
+        if (err.constraint === 'games_join_code_key') {
+          return { success: false, error: 'JOIN_CODE_TAKEN' };
+        }
+        // Unknown constraint
+        return { success: false, error: 'CONSTRAINT_VIOLATION', constraint: err.constraint };
+      }
+
+      // Handle NOT NULL violations
+      if (err.code === '23502') { // PostgreSQL NOT NULL violation
+        return { success: false, error: 'MISSING_REQUIRED_FIELD', field: err.column };
+      }
+
+      // Unexpected error - bubble up
+      throw err;
+    }
   }
 
   /**

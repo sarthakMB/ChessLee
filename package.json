@@ -8,6 +8,7 @@
     "dev": "NODE_ENV=development nodemon --watch src --ext mjs,js src/app.mjs",
     "dev:css": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./public/css/output.css --watch",
     "migrate": "node db/migrations/migrate.mjs",
+    "dump-schema": "docker-compose exec postgres pg_dump -U chess_user -d chess_dev --schema-only --no-owner > db/schema.sql",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

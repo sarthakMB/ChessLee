@@ -17,21 +17,40 @@ export class GuestRepository {
    *
    * @param {Object} guestObject - Object with fields to insert
    * @param {string} guestObject.id - Guest UUID (generated client-side)
-   * @returns {Promise<Object>} Created guest with timestamps
+   * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
    */
   async insertGuest(guestObject) {
     const fields = Object.keys(guestObject);
     const values = Object.values(guestObject);
     const placeholders = fields.map((_, i) => `$${i + 1}`).join(', ');
 
-    const result = await this.pool.query(
-      `INSERT INTO guests (${fields.join(', ')})
-       VALUES (${placeholders})
-       RETURNING *`,
-      values
-    );
+    try {
+      const result = await this.pool.query(
+        `INSERT INTO guests (${fields.join(', ')})
+         VALUES (${placeholders})
+         RETURNING *`,
+        values
+      );
 
-    return result.rows[0];
+      return { success: true, data: result.rows[0] };
+    } catch (err) {
+      // Handle expected constraint violations
+      if (err.code === '23505') { // PostgreSQL UNIQUE violation
+        if (err.constraint === 'guests_session_id_key') {
+          return { success: false, error: 'SESSION_ID_TAKEN' };
+        }
+        // Unknown constraint
+        return { success: false, error: 'CONSTRAINT_VIOLATION', constraint: err.constraint };
+      }
+
+      // Handle NOT NULL violations
+      if (err.code === '23502') { // PostgreSQL NOT NULL violation
+        return { success: false, error: 'MISSING_REQUIRED_FIELD', field: err.column };
+      }
+
+      // Unexpected error - bubble up
+      throw err;
+    }
   }
 
   /**
