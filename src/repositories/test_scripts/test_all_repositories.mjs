@@ -176,45 +176,45 @@ async function testMoveRepository(gameId) {
       game_id: gameId,
       move_number: 1,
       player_color: 'white',
-      move_san: 'e4',
       move_from: 'e2',
       move_to: 'e4',
+      promotion: null,
       fen_after: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'
     });
     const move1 = move1Result.data;
-    logTest('insertMove (move 1)', move1Result.success && move1.move_number === 1, `Move: ${move1.move_san}`);
+    logTest('insertMove (move 1)', move1Result.success && move1.move_number === 1, `Move: ${move1.move_from}-${move1.move_to}`);
 
     // Test 2: Insert second move
     const move2Result = await moveRepository.insertMove({
       game_id: gameId,
       move_number: 2,
       player_color: 'black',
-      move_san: 'e5',
       move_from: 'e7',
       move_to: 'e5',
+      promotion: null,
       fen_after: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2'
     });
     const move2 = move2Result.data;
-    logTest('insertMove (move 2)', move2Result.success && move2.move_number === 2, `Move: ${move2.move_san}`);
+    logTest('insertMove (move 2)', move2Result.success && move2.move_number === 2, `Move: ${move2.move_from}-${move2.move_to}`);
 
     // Test 3: Insert third move
     const move3Result = await moveRepository.insertMove({
       game_id: gameId,
       move_number: 3,
       player_color: 'white',
-      move_san: 'Nf3',
       move_from: 'g1',
       move_to: 'f3',
+      promotion: null,
       fen_after: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2'
     });
     const move3 = move3Result.data;
-    logTest('insertMove (move 3)', move3Result.success && move3.move_number === 3, `Move: ${move3.move_san}`);
+    logTest('insertMove (move 3)', move3Result.success && move3.move_number === 3, `Move: ${move3.move_from}-${move3.move_to}`);
 
     // Test 4: Find all moves by game_id (should return array)
     const findResult = await moveRepository.findMoves(gameId);
     const allMoves = findResult.data;
     logTest('findMoves by game_id', findResult.success && Array.isArray(allMoves) && allMoves.length === 3,
-      `Found ${allMoves.length} moves: ${allMoves.map(m => m.move_san).join(', ')}`);
+      `Found ${allMoves.length} moves: ${allMoves.map(m => `${m.move_from}-${m.move_to}`).join(', ')}`);
 
     // Test 5: Verify moves are ordered by move_number
     const isOrdered = allMoves.every((move, i) => move.move_number === i + 1);

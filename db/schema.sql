@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict L6gdsX9NpdHr6mkwMhOq0GOJev6ZzTw6CpQeYjpIbD2bKghMLskcg8IpDagzAfE
+\restrict 2DyfCXtGs8ZaNRK5Xj4WCCaTWwgqpbMSuo4WCw197KbAv0RKj81JfoZqlY6vmrj
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -27,12 +27,12 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE public.games (
-    game_id character varying(20) DEFAULT ('G'::text || (floor((random() * ('9223372036854775807'::bigint)::double precision)))::text) NOT NULL,
+    game_id character varying(21) DEFAULT ('G'::text || ((floor((random() * ('9223372036854775807'::bigint)::double precision)))::bigint)::text) NOT NULL,
     mode character varying(20) NOT NULL,
-    owner_id character varying(20) NOT NULL,
+    owner_id character varying(21) NOT NULL,
     owner_type character varying(10) NOT NULL,
     owner_color character varying(10) NOT NULL,
-    opponent_id character varying(20),
+    opponent_id character varying(21),
     opponent_type character varying(10),
     opponent_color character varying(10),
     join_code character varying(8),
@@ -56,9 +56,9 @@ CREATE TABLE public.games (
 --
 
 CREATE TABLE public.guests (
-    guest_id character varying(20) DEFAULT ('T'::text || (floor((random() * ('9223372036854775807'::bigint)::double precision)))::text) NOT NULL,
+    guest_id character varying(21) DEFAULT ('T'::text || ((floor((random() * ('9223372036854775807'::bigint)::double precision)))::bigint)::text) NOT NULL,
     session_id character varying(255) NOT NULL,
-    upgraded_to character varying(20),
+    upgraded_to character varying(21),
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     is_deleted boolean NOT NULL,
     is_test boolean NOT NULL
@@ -70,18 +70,17 @@ CREATE TABLE public.guests (
 --
 
 CREATE TABLE public.moves (
-    game_id character varying(20) NOT NULL,
+    game_id character varying(21) NOT NULL,
     move_number integer NOT NULL,
     player_color character varying(5) NOT NULL,
-    move_san character varying(10) NOT NULL,
     move_from character varying(2) NOT NULL,
     move_to character varying(2) NOT NULL,
     fen_after text NOT NULL,
     time_taken_ms integer,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    is_deleted boolean NOT NULL,
-    is_test boolean NOT NULL,
-    CONSTRAINT moves_player_color_check CHECK (((player_color)::text = ANY ((ARRAY['white'::character varying, 'black'::character varying])::text[])))
+    promotion character varying(1),
+    CONSTRAINT moves_player_color_check CHECK (((player_color)::text = ANY ((ARRAY['white'::character varying, 'black'::character varying])::text[]))),
+    CONSTRAINT moves_promotion_check CHECK (((promotion)::text = ANY ((ARRAY['q'::character varying, 'r'::character varying, 'b'::character varying, 'n'::character varying])::text[])))
 );
 
 
@@ -121,7 +120,7 @@ ALTER SEQUENCE public.schema_migrations_id_seq OWNED BY public.schema_migrations
 --
 
 CREATE TABLE public.users (
-    user_id character varying(20) DEFAULT ('U'::text || (floor((random() * ('9223372036854775807'::bigint)::double precision)))::text) NOT NULL,
+    user_id character varying(21) DEFAULT ('U'::text || ((floor((random() * ('9223372036854775807'::bigint)::double precision)))::bigint)::text) NOT NULL,
     username character varying(50) NOT NULL,
     email character varying(255),
     password_hash character varying(255) NOT NULL,
@@ -327,20 +326,6 @@ CREATE INDEX idx_moves_game_move_number ON public.moves USING btree (game_id, mo
 
 
 --
--- Name: idx_moves_is_deleted; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_moves_is_deleted ON public.moves USING btree (is_deleted);
-
-
---
--- Name: idx_moves_is_test; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_moves_is_test ON public.moves USING btree (is_test) WHERE (is_test = true);
-
-
---
 -- Name: idx_moves_player_color; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -395,5 +380,5 @@ ALTER TABLE ONLY public.moves
 -- PostgreSQL database dump complete
 --
 
-\unrestrict L6gdsX9NpdHr6mkwMhOq0GOJev6ZzTw6CpQeYjpIbD2bKghMLskcg8IpDagzAfE
+\unrestrict 2DyfCXtGs8ZaNRK5Xj4WCCaTWwgqpbMSuo4WCw197KbAv0RKj81JfoZqlY6vmrj
 

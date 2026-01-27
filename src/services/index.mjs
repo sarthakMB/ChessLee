@@ -15,11 +15,17 @@
 import { pool } from '../../db/index.mjs';
 import { UserRepository } from '../repositories/UserRepository.mjs';
 import { GuestRepository } from '../repositories/GuestRepository.mjs';
+import { GameRepository } from '../repositories/GameRepository.mjs';
+import { MoveRepository } from '../repositories/MoveRepository.mjs';
 import { AuthService } from './AuthService.mjs';
+import { GameService } from './GameService.mjs';
 
 // Initialize repositories
 const userRepository = new UserRepository(pool);
 const guestRepository = new GuestRepository(pool);
+const gameRepository = new GameRepository(pool);
+const moveRepository = new MoveRepository(pool);
 
 // Initialize services
 export const authService = new AuthService(userRepository, guestRepository);
+export const gameService = new GameService(gameRepository, moveRepository);

@@ -20,8 +20,10 @@ export class MoveRepository {
    * @param {Object} moveObject - Object with fields to insert
    * @param {string} moveObject.game_id - Game ID (e.g., G1234567890)
    * @param {number} moveObject.move_number - Move number in sequence
-   * @param {string} moveObject.move_san - Move in SAN notation
-   * @param {string} moveObject.move_uci - Move in UCI notation
+   * @param {string} moveObject.player_color - 'white' or 'black'
+   * @param {string} moveObject.move_from - Source square (e.g., 'e2')
+   * @param {string} moveObject.move_to - Target square (e.g., 'e4')
+   * @param {string|null} moveObject.promotion - Promotion piece ('q', 'r', 'b', 'n') or null
    * @param {string} moveObject.fen_after - Board state after move
    * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
    */
