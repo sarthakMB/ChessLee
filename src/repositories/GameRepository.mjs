@@ -20,12 +20,12 @@ export class GameRepository {
    *
    * @param {Object} gameObject - Object with fields to insert
    * @param {string} gameObject.mode - Game mode (e.g., 'computer', 'friend') - REQUIRED
-   * @param {string} gameObject.owner_id - Owner UUID - REQUIRED
+   * @param {string} gameObject.owner_id - Owner ID (e.g., U1234567890) - REQUIRED
    * @param {string} gameObject.owner_type - 'user' or 'guest' - REQUIRED
    * @param {string} gameObject.owner_color - Player color ('white' or 'black') - REQUIRED
    * @param {boolean} gameObject.is_deleted - Soft delete flag - REQUIRED
    * @param {boolean} gameObject.is_test - Test data flag - REQUIRED
-   * @param {string} [gameObject.opponent_id] - Opponent UUID - OPTIONAL
+   * @param {string} [gameObject.opponent_id] - Opponent ID (e.g., U1234567890, T1234567890) - OPTIONAL
    * @param {string} [gameObject.opponent_type] - 'user' or 'guest' - OPTIONAL
    * @param {string} [gameObject.opponent_color] - Opponent color ('white' or 'black') - OPTIONAL
    * @param {string} [gameObject.join_code] - Join code for friend games - OPTIONAL

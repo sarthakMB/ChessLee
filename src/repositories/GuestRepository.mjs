@@ -16,7 +16,7 @@ export class GuestRepository {
    * Insert a new guest
    *
    * @param {Object} guestObject - Object with fields to insert
-   * @param {string} guestObject.id - Guest UUID (generated client-side)
+   * @param {string} guestObject.session_id - Session ID linking guest to their session
    * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
    */
   async insertGuest(guestObject) {

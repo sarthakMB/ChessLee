@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict vxhAhCwKCEmaEi85wwM9GKdA65kdA9H4TbUXRFYuMbqNSycftR0iIlOfPjxogZB
+\restrict L6gdsX9NpdHr6mkwMhOq0GOJev6ZzTw6CpQeYjpIbD2bKghMLskcg8IpDagzAfE
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -18,20 +18,6 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
---
--- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
-
-
---
--- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -41,12 +27,12 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE public.games (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    game_id character varying(20) DEFAULT ('G'::text || (floor((random() * ('9223372036854775807'::bigint)::double precision)))::text) NOT NULL,
     mode character varying(20) NOT NULL,
-    owner_id uuid NOT NULL,
+    owner_id character varying(20) NOT NULL,
     owner_type character varying(10) NOT NULL,
     owner_color character varying(10) NOT NULL,
-    opponent_id uuid,
+    opponent_id character varying(20),
     opponent_type character varying(10),
     opponent_color character varying(10),
     join_code character varying(8),
@@ -70,9 +56,9 @@ CREATE TABLE public.games (
 --
 
 CREATE TABLE public.guests (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    guest_id character varying(20) DEFAULT ('T'::text || (floor((random() * ('9223372036854775807'::bigint)::double precision)))::text) NOT NULL,
     session_id character varying(255) NOT NULL,
-    upgraded_to uuid,
+    upgraded_to character varying(20),
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     is_deleted boolean NOT NULL,
     is_test boolean NOT NULL
@@ -84,8 +70,7 @@ CREATE TABLE public.guests (
 --
 
 CREATE TABLE public.moves (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    game_id uuid NOT NULL,
+    game_id character varying(20) NOT NULL,
     move_number integer NOT NULL,
     player_color character varying(5) NOT NULL,
     move_san character varying(10) NOT NULL,
@@ -136,7 +121,7 @@ ALTER SEQUENCE public.schema_migrations_id_seq OWNED BY public.schema_migrations
 --
 
 CREATE TABLE public.users (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id character varying(20) DEFAULT ('U'::text || (floor((random() * ('9223372036854775807'::bigint)::double precision)))::text) NOT NULL,
     username character varying(50) NOT NULL,
     email character varying(255),
     password_hash character varying(255) NOT NULL,
@@ -169,7 +154,7 @@ ALTER TABLE ONLY public.games
 --
 
 ALTER TABLE ONLY public.games
-    ADD CONSTRAINT games_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT games_pkey PRIMARY KEY (game_id);
 
 
 --
@@ -177,7 +162,7 @@ ALTER TABLE ONLY public.games
 --
 
 ALTER TABLE ONLY public.guests
-    ADD CONSTRAINT guests_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT guests_pkey PRIMARY KEY (guest_id);
 
 
 --
@@ -189,19 +174,11 @@ ALTER TABLE ONLY public.guests
 
 
 --
--- Name: moves moves_game_id_move_number_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.moves
-    ADD CONSTRAINT moves_game_id_move_number_key UNIQUE (game_id, move_number);
-
-
---
 -- Name: moves moves_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.moves
-    ADD CONSTRAINT moves_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT moves_pkey PRIMARY KEY (game_id, move_number);
 
 
 --
@@ -233,7 +210,7 @@ ALTER TABLE ONLY public.users
 --
 
 ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT users_pkey PRIMARY KEY (user_id);
 
 
 --
@@ -403,7 +380,7 @@ CREATE INDEX idx_users_username ON public.users USING btree (username);
 --
 
 ALTER TABLE ONLY public.guests
-    ADD CONSTRAINT guests_upgraded_to_fkey FOREIGN KEY (upgraded_to) REFERENCES public.users(id) ON DELETE SET NULL;
+    ADD CONSTRAINT guests_upgraded_to_fkey FOREIGN KEY (upgraded_to) REFERENCES public.users(user_id) ON DELETE SET NULL;
 
 
 --
@@ -411,12 +388,12 @@ ALTER TABLE ONLY public.guests
 --
 
 ALTER TABLE ONLY public.moves
-    ADD CONSTRAINT moves_game_id_fkey FOREIGN KEY (game_id) REFERENCES public.games(id) ON DELETE CASCADE;
+    ADD CONSTRAINT moves_game_id_fkey FOREIGN KEY (game_id) REFERENCES public.games(game_id) ON DELETE CASCADE;
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict vxhAhCwKCEmaEi85wwM9GKdA65kdA9H4TbUXRFYuMbqNSycftR0iIlOfPjxogZB
+\unrestrict L6gdsX9NpdHr6mkwMhOq0GOJev6ZzTw6CpQeYjpIbD2bKghMLskcg8IpDagzAfE
 

@@ -25,18 +25,19 @@ async function testUserRepository() {
 
   try {
     // Test 1: Insert user
-    const newUser = await userRepository.insertUser({
+    const result = await userRepository.insertUser({
       username: 'testuser_' + Date.now(),
       email: `test_${Date.now()}@example.com`,
       password_hash: '$2b$12$hashedpassword123',
       is_deleted: false,
       is_test: true
     });
-    logTest('insertUser', newUser && newUser.id, `Created user: ${newUser.username}`);
+    const newUser = result.data;
+    logTest('insertUser', result.success && newUser.user_id, `Created user: ${newUser.user_id}`);
 
-    // Test 2: Find user by id
-    const foundById = await userRepository.findUser('id', newUser.id);
-    logTest('findUser by id', foundById && foundById.id === newUser.id, `Found: ${foundById.username}`);
+    // Test 2: Find user by user_id
+    const foundById = await userRepository.findUser('user_id', newUser.user_id);
+    logTest('findUser by user_id', foundById && foundById.user_id === newUser.user_id, `Found: ${foundById.username}`);
 
     // Test 3: Find user by username
     const foundByUsername = await userRepository.findUser('username', newUser.username);
@@ -47,11 +48,11 @@ async function testUserRepository() {
     logTest('findUser by email', foundByEmail && foundByEmail.email === newUser.email);
 
     // Test 5: Delete user (soft delete)
-    const deleteCount = await userRepository.deleteUser('id', newUser.id);
+    const deleteCount = await userRepository.deleteUser('user_id', newUser.user_id);
     logTest('deleteUser', deleteCount === 1, `Soft deleted ${deleteCount} user(s)`);
 
     // Test 6: Verify soft delete (user should still be in DB but is_deleted = true)
-    const deletedUser = await userRepository.findUser('id', newUser.id);
+    const deletedUser = await userRepository.findUser('user_id', newUser.user_id);
     logTest('Verify soft delete', deletedUser && deletedUser.is_deleted === true, 'User marked as deleted');
 
     return newUser;
@@ -65,28 +66,28 @@ async function testGuestRepository() {
   console.log('\n=== Testing GuestRepository ===\n');
 
   try {
-    // Generate UUID for guest (normally done client-side)
-    const guestId = crypto.randomUUID();
-
-    // Test 1: Insert guest
-    const newGuest = await guestRepository.insertGuest({
-      id: guestId,
+    // Test 1: Insert guest (DB generates T-prefixed ID)
+    const result = await guestRepository.insertGuest({
       session_id: 'test_session_' + Date.now(),
       is_deleted: false,
       is_test: true
     });
-    logTest('insertGuest', newGuest && newGuest.id === guestId, `Created guest: ${newGuest.id}`);
+    const newGuest = result.data;
+    logTest('insertGuest', result.success && newGuest.guest_id, `Created guest: ${newGuest.guest_id}`);
 
-    // Test 2: Find guest by id
-    const foundGuest = await guestRepository.findGuest('id', guestId);
-    logTest('findGuest by id', foundGuest && foundGuest.id === guestId);
+    // Test 2: Verify guest_id has T prefix
+    logTest('guest_id has T prefix', newGuest.guest_id.startsWith('T'), `ID: ${newGuest.guest_id}`);
 
-    // Test 3: Delete guest (soft delete)
-    const deleteCount = await guestRepository.deleteGuest('id', guestId);
+    // Test 3: Find guest by guest_id
+    const foundGuest = await guestRepository.findGuest('guest_id', newGuest.guest_id);
+    logTest('findGuest by guest_id', foundGuest && foundGuest.guest_id === newGuest.guest_id);
+
+    // Test 4: Delete guest (soft delete)
+    const deleteCount = await guestRepository.deleteGuest('guest_id', newGuest.guest_id);
     logTest('deleteGuest', deleteCount === 1, `Soft deleted ${deleteCount} guest(s)`);
 
-    // Test 4: Verify soft delete
-    const deletedGuest = await guestRepository.findGuest('id', guestId);
+    // Test 5: Verify soft delete
+    const deletedGuest = await guestRepository.findGuest('guest_id', newGuest.guest_id);
     logTest('Verify soft delete', deletedGuest && deletedGuest.is_deleted === true, 'Guest marked as deleted');
 
     return newGuest;
@@ -100,19 +101,18 @@ async function testGameRepository() {
   console.log('\n=== Testing GameRepository ===\n');
 
   try {
-    // Create a guest to own the game
-    const guestId = crypto.randomUUID();
-    await guestRepository.insertGuest({
-      id: guestId,
+    // Create a guest to own the game (DB generates T-prefixed ID)
+    const guestResult = await guestRepository.insertGuest({
       session_id: 'test_session_game_' + Date.now(),
       is_deleted: false,
       is_test: true
     });
+    const guest = guestResult.data;
 
-    // Test 1: Insert computer game
-    const computerGame = await gameRepository.insertGame({
+    // Test 1: Insert computer game (DB generates G-prefixed ID)
+    const computerGameResult = await gameRepository.insertGame({
       mode: 'computer',
-      owner_id: guestId,
+      owner_id: guest.guest_id,
       owner_type: 'guest',
       owner_color: 'white',
       opponent_type: 'computer',
@@ -120,39 +120,44 @@ async function testGameRepository() {
       is_deleted: false,
       is_test: true
     });
-    logTest('insertGame (computer)', computerGame && computerGame.id, `Created game: ${computerGame.id}`);
+    const computerGame = computerGameResult.data;
+    logTest('insertGame (computer)', computerGameResult.success && computerGame.game_id, `Created game: ${computerGame.game_id}`);
 
-    // Test 2: Insert friend game with join code
+    // Test 2: Verify game_id has G prefix
+    logTest('game_id has G prefix', computerGame.game_id.startsWith('G'), `ID: ${computerGame.game_id}`);
+
+    // Test 3: Insert friend game with join code
     const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const friendGame = await gameRepository.insertGame({
+    const friendGameResult = await gameRepository.insertGame({
       mode: 'friend',
-      owner_id: guestId,
+      owner_id: guest.guest_id,
       owner_type: 'guest',
       owner_color: 'white',
       join_code: joinCode,
       is_deleted: false,
       is_test: true
     });
-    logTest('insertGame (friend)', friendGame && friendGame.join_code === joinCode, `Join code: ${joinCode}`);
+    const friendGame = friendGameResult.data;
+    logTest('insertGame (friend)', friendGameResult.success && friendGame.join_code === joinCode, `Join code: ${joinCode}`);
 
-    // Test 3: Find game by id
-    const foundById = await gameRepository.findGame('id', computerGame.id);
-    logTest('findGame by id', foundById && foundById.id === computerGame.id);
+    // Test 4: Find game by game_id
+    const foundById = await gameRepository.findGame('game_id', computerGame.game_id);
+    logTest('findGame by game_id', foundById && foundById.game_id === computerGame.game_id);
 
-    // Test 4: Find game by join_code
+    // Test 5: Find game by join_code
     const foundByCode = await gameRepository.findGame('join_code', joinCode);
     logTest('findGame by join_code', foundByCode && foundByCode.join_code === joinCode);
 
-    // Test 5: Find game by owner_id
-    const foundByOwner = await gameRepository.findGame('owner_id', guestId);
-    logTest('findGame by owner_id', foundByOwner && foundByOwner.owner_id === guestId, 'Note: Returns first match only');
+    // Test 6: Find game by owner_id
+    const foundByOwner = await gameRepository.findGame('owner_id', guest.guest_id);
+    logTest('findGame by owner_id', foundByOwner && foundByOwner.owner_id === guest.guest_id, 'Note: Returns first match only');
 
-    // Test 6: Delete game (soft delete)
-    const deleteCount = await gameRepository.deleteGame('id', computerGame.id);
+    // Test 7: Delete game (soft delete)
+    const deleteCount = await gameRepository.deleteGame('game_id', computerGame.game_id);
     logTest('deleteGame', deleteCount === 1, `Soft deleted ${deleteCount} game(s)`);
 
-    // Test 7: Verify soft delete
-    const deletedGame = await gameRepository.findGame('id', computerGame.id);
+    // Test 8: Verify soft delete
+    const deletedGame = await gameRepository.findGame('game_id', computerGame.game_id);
     logTest('Verify soft delete', deletedGame && deletedGame.is_deleted === true, 'Game marked as deleted');
 
     return friendGame;
@@ -167,7 +172,7 @@ async function testMoveRepository(gameId) {
 
   try {
     // Test 1: Insert first move
-    const move1 = await moveRepository.insertMove({
+    const move1Result = await moveRepository.insertMove({
       game_id: gameId,
       move_number: 1,
       player_color: 'white',
@@ -178,10 +183,11 @@ async function testMoveRepository(gameId) {
       is_deleted: false,
       is_test: true
     });
-    logTest('insertMove (move 1)', move1 && move1.move_number === 1, `Move: ${move1.move_san}`);
+    const move1 = move1Result.data;
+    logTest('insertMove (move 1)', move1Result.success && move1.move_number === 1, `Move: ${move1.move_san}`);
 
     // Test 2: Insert second move
-    const move2 = await moveRepository.insertMove({
+    const move2Result = await moveRepository.insertMove({
       game_id: gameId,
       move_number: 2,
       player_color: 'black',
@@ -192,10 +198,11 @@ async function testMoveRepository(gameId) {
       is_deleted: false,
       is_test: true
     });
-    logTest('insertMove (move 2)', move2 && move2.move_number === 2, `Move: ${move2.move_san}`);
+    const move2 = move2Result.data;
+    logTest('insertMove (move 2)', move2Result.success && move2.move_number === 2, `Move: ${move2.move_san}`);
 
     // Test 3: Insert third move
-    const move3 = await moveRepository.insertMove({
+    const move3Result = await moveRepository.insertMove({
       game_id: gameId,
       move_number: 3,
       player_color: 'white',
@@ -206,28 +213,26 @@ async function testMoveRepository(gameId) {
       is_deleted: false,
       is_test: true
     });
-    logTest('insertMove (move 3)', move3 && move3.move_number === 3, `Move: ${move3.move_san}`);
+    const move3 = move3Result.data;
+    logTest('insertMove (move 3)', move3Result.success && move3.move_number === 3, `Move: ${move3.move_san}`);
 
-    // Test 4: Find move by id
-    const foundById = await moveRepository.findMove('id', move1.id);
-    logTest('findMove by id', foundById && foundById.id === move1.id, `Found: ${foundById.move_san}`);
-
-    // Test 5: Find all moves by game_id (should return array)
+    // Test 4: Find all moves by game_id (should return array)
     const allMoves = await moveRepository.findMove('game_id', gameId);
     logTest('findMove by game_id', Array.isArray(allMoves) && allMoves.length === 3,
       `Found ${allMoves.length} moves: ${allMoves.map(m => m.move_san).join(', ')}`);
 
-    // Test 6: Verify moves are ordered by move_number
+    // Test 5: Verify moves are ordered by move_number
     const isOrdered = allMoves.every((move, i) => move.move_number === i + 1);
     logTest('Moves ordered correctly', isOrdered, 'Ordered by move_number ASC');
 
-    // Test 7: Delete move (soft delete)
-    const deleteCount = await moveRepository.deleteMove('id', move1.id);
-    logTest('deleteMove', deleteCount === 1, `Soft deleted ${deleteCount} move(s)`);
+    // Test 6: Delete move by game_id (soft delete all moves for game)
+    const deleteCount = await moveRepository.deleteMove('game_id', gameId);
+    logTest('deleteMove by game_id', deleteCount === 3, `Soft deleted ${deleteCount} move(s)`);
 
-    // Test 8: Verify soft delete
-    const deletedMove = await moveRepository.findMove('id', move1.id);
-    logTest('Verify soft delete', deletedMove && deletedMove.is_deleted === true, 'Move marked as deleted');
+    // Test 7: Verify soft delete
+    const deletedMoves = await moveRepository.findMove('game_id', gameId);
+    const allDeleted = deletedMoves.every(m => m.is_deleted === true);
+    logTest('Verify soft delete', allDeleted, 'All moves marked as deleted');
 
   } catch (error) {
     console.error('MoveRepository test failed:', error.message);
@@ -245,7 +250,7 @@ async function runAllTests() {
     await testUserRepository();
     await testGuestRepository();
     const game = await testGameRepository();
-    await testMoveRepository(game.id);
+    await testMoveRepository(game.game_id);
 
     console.log('\n╔════════════════════════════════════════╗');
     console.log('║         All Tests Completed ✓          ║');

@@ -1,8 +1,8 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
 import { gameStore } from '../game/store.mjs';
+// TODO: Import GameService (to be created) which will handle DB persistence + in-memory store
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,7 +59,8 @@ router.post('/computer', (req, res) => {
   //Color of player sent in json
   const ownerColor = req.body.color;
 
-  const gameId = randomUUID();
+  // TODO: Replace with GameService.createGame() which inserts to DB and gets G-prefixed ID
+  const gameId = 'G' + Math.floor(Math.random() * 9223372036854775807);
   const manager = gameStore.createGame({
     id: gameId,
     mode: 'computer',
@@ -87,8 +88,9 @@ router.post('/friend', (req, res) => {
   //Color of player sent in json
   const ownerColor = req.body.color;
 
-  const gameId = randomUUID();
-  const joinCode = randomUUID().split('-')[0].toUpperCase();
+  // TODO: Replace with GameService.createGame() which inserts to DB and gets G-prefixed ID
+  const gameId = 'G' + Math.floor(Math.random() * 9223372036854775807);
+  const joinCode = Math.random().toString(36).slice(2, 10).toUpperCase();
   const manager = gameStore.createGame({
     id: gameId,
     mode: 'friend',

@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
 import dotenv from 'dotenv';
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
@@ -12,6 +11,7 @@ import gameRouter from './routes/game.mjs';
 
 import requestLogger from '../utils/request_logger.mjs';
 import { redisClient, initDatabases } from '../db/index.mjs';
+import { guestRepository } from './repositories/index.mjs';
 
 dotenv.config();
 
@@ -35,7 +35,7 @@ const sessionStore = process.env.REDIS_URL
   ? new RedisStore({ 
       client: redisClient,
       prefix: 'sess:',           // Keys stored as sess:abc123
-      ttl: 86400                 // 24 hours in seconds
+      ttl: 86400 * 30               // 24 hours * 30 in seconds
     })
   : undefined; // Falls back to MemoryStore when undefined
 
@@ -59,7 +59,7 @@ app.use(
 );
 
 
-const ensureSubject = (req, res, next) => { // if no subject in session, create guest subject
+const ensureSubject = async (req, res, next) => { // if no subject in session, create guest subject
   if (!req.session) {
     return res.status(500).json({ error: 'Session store unavailable' });
   }
@@ -74,7 +74,18 @@ const ensureSubject = (req, res, next) => { // if no subject in session, create 
     return next();
   }
 
-  req.session.subject = { id: randomUUID(), type: 'guest' }; // initialize guest subject in session
+  // Insert guest into DB — DB generates T-prefixed ID
+  const result = await guestRepository.insertGuest({
+    session_id: req.sessionID,
+    is_deleted: false,
+    is_test: false
+  });
+
+  if (!result.success) {
+    return res.status(500).json({ error: 'Failed to create guest' });
+  }
+
+  req.session.subject = { id: result.data.id, type: 'guest' };
   return next();
 };
 

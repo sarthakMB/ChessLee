@@ -16,7 +16,7 @@ export class MoveRepository {
    * Insert a new move
    *
    * @param {Object} moveObject - Object with fields to insert
-   * @param {string} moveObject.game_id - Game UUID
+   * @param {string} moveObject.game_id - Game ID (e.g., G1234567890)
    * @param {number} moveObject.move_number - Move number in sequence
    * @param {string} moveObject.move_san - Move in SAN notation
    * @param {string} moveObject.move_uci - Move in UCI notation
