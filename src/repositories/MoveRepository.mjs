@@ -1,10 +1,12 @@
 /**
  * MoveRepository
  *
- * Simplified repository pattern with three core methods:
+ * Simplified repository pattern with two core methods:
  * - insertMove: Insert new move
- * - findMove: Find move(s) by any field
- * - deleteMove: Soft delete move
+ * - findMoves: Find all moves for a game
+ *
+ * No delete method - moves inherit lifecycle from their parent game
+ * (soft delete via games.is_deleted, hard delete via CASCADE)
  */
 
 export class MoveRepository {
@@ -58,51 +60,23 @@ export class MoveRepository {
   }
 
   /**
-   * Find move(s) by a specific field
+   * Find all moves for a game, ordered by move_number
    *
-   * Note: When searching by game_id, returns ALL moves for that game ordered by move_number
-   *
-   * @param {string} field - Field name to search (e.g., 'id', 'game_id')
-   * @param {any} value - Value to match
-   * @returns {Promise<Object|Object[]|null>} Move object, array of moves, or null if not found
+   * @param {string} game_id - Game ID (e.g., G1234567890)
+   * @returns {Promise<{success: true, data: Object[]} | {success: false, error: string}>}
    */
-  async findMove(field, value) {
-    // Special case: when finding by game_id, return all moves ordered
-    if (field === 'game_id') {
+  async findMoves(game_id) {
+    try {
       const result = await this.pool.query(
         `SELECT * FROM moves
-         WHERE ${field} = $1
+         WHERE game_id = $1
          ORDER BY move_number ASC`,
-        [value]
+        [game_id]
       );
-      return result.rows; // Return array of all moves
+
+      return { success: true, data: result.rows };
+    } catch (err) {
+      throw err;
     }
-
-    // Default case: return single move
-    const result = await this.pool.query(
-      `SELECT * FROM moves
-       WHERE ${field} = $1`,
-      [value]
-    );
-
-    return result.rows[0] || null;
-  }
-
-  /**
-   * Soft delete move(s)
-   *
-   * @param {string} field - Field name to search (e.g., 'id', 'game_id')
-   * @param {any} value - Value to match
-   * @returns {Promise<number>} Number of rows affected
-   */
-  async deleteMove(field, value) {
-    const result = await this.pool.query(
-      `UPDATE moves
-       SET is_deleted = true
-       WHERE ${field} = $1`,
-      [value]
-    );
-
-    return result.rowCount;
   }
 }

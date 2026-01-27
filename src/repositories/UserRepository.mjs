@@ -7,6 +7,8 @@
  * - deleteUser: Soft delete user
  */
 
+const UNIQUE_FIELDS = ['user_id', 'username', 'email'];
+
 export class UserRepository {
   constructor(pool) {
     this.pool = pool;
@@ -59,37 +61,53 @@ export class UserRepository {
   }
 
   /**
-   * Find user by a specific field
+   * Find user by a unique field
    *
-   * @param {string} field - Field name to search (e.g., 'id', 'username', 'email')
+   * @param {string} field - Unique field name to search ('user_id', 'username', 'email')
    * @param {any} value - Value to match
-   * @returns {Promise<Object|null>} User object or null if not found
+   * @returns {Promise<{success: true, data: Object|null} | {success: false, error: string}>}
    */
   async findUser(field, value) {
-    const result = await this.pool.query(
-      `SELECT * FROM users
-       WHERE ${field} = $1`,
-      [value]
-    );
+    if (!UNIQUE_FIELDS.includes(field)) {
+      return { success: false, error: 'INVALID_FIELD', field };
+    }
 
-    return result.rows[0] || null;
+    try {
+      const result = await this.pool.query(
+        `SELECT * FROM users
+         WHERE ${field} = $1`,
+        [value]
+      );
+
+      return { success: true, data: result.rows[0] || null };
+    } catch (err) {
+      throw err;
+    }
   }
 
   /**
    * Soft delete a user
    *
-   * @param {string} field - Field name to search (e.g., 'id', 'username')
+   * @param {string} field - Unique field name to search ('user_id', 'username', 'email')
    * @param {any} value - Value to match
-   * @returns {Promise<number>} Number of rows affected
+   * @returns {Promise<{success: true, data: number} | {success: false, error: string}>}
    */
   async deleteUser(field, value) {
-    const result = await this.pool.query(
-      `UPDATE users
-       SET is_deleted = true, updated_at = CURRENT_TIMESTAMP
-       WHERE ${field} = $1 AND is_deleted = false`,
-      [value]
-    );
+    if (!UNIQUE_FIELDS.includes(field)) {
+      return { success: false, error: 'INVALID_FIELD', field };
+    }
 
-    return result.rowCount;
+    try {
+      const result = await this.pool.query(
+        `UPDATE users
+         SET is_deleted = true, updated_at = CURRENT_TIMESTAMP
+         WHERE ${field} = $1 AND is_deleted = false`,
+        [value]
+      );
+
+      return { success: true, data: result.rowCount };
+    } catch (err) {
+      throw err;
+    }
   }
 }

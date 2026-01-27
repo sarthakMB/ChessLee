@@ -1,11 +1,15 @@
 /**
  * GameRepository
  *
- * Simplified repository pattern with three core methods:
+ * Simplified repository pattern with four core methods:
  * - insertGame: Insert new game
- * - findGame: Find game by any field
+ * - findGame: Find game by unique field
+ * - updateGame: Update opponent fields when a player joins
  * - deleteGame: Soft delete game
  */
+
+const UNIQUE_FIELDS = ['game_id', 'join_code'];
+const UPDATABLE_FIELDS = ['opponent_id', 'opponent_type', 'opponent_color'];
 
 export class GameRepository {
   constructor(pool) {
@@ -67,37 +71,91 @@ export class GameRepository {
   }
 
   /**
-   * Find game by a specific field
+   * Find game by a unique field
    *
-   * @param {string} field - Field name to search (e.g., 'id', 'join_code', 'owner_id')
+   * @param {string} field - Unique field name to search ('game_id', 'join_code')
    * @param {any} value - Value to match
-   * @returns {Promise<Object|null>} Game object or null if not found
+   * @returns {Promise<{success: true, data: Object|null} | {success: false, error: string}>}
    */
   async findGame(field, value) {
-    const result = await this.pool.query(
-      `SELECT * FROM games
-       WHERE ${field} = $1`,
-      [value]
-    );
+    if (!UNIQUE_FIELDS.includes(field)) {
+      return { success: false, error: 'INVALID_FIELD', field };
+    }
 
-    return result.rows[0] || null;
+    try {
+      const result = await this.pool.query(
+        `SELECT * FROM games
+         WHERE ${field} = $1`,
+        [value]
+      );
+
+      return { success: true, data: result.rows[0] || null };
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  /**
+   * Update a game by game_id
+   *
+   * @param {string} game_id - Game ID to update
+   * @param {Object} updateObject - Object with fields to update (only opponent_id, opponent_type, opponent_color allowed)
+   * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
+   */
+  async updateGame(game_id, updateObject) {
+    const fields = Object.keys(updateObject);
+
+    const invalidFields = fields.filter(f => !UPDATABLE_FIELDS.includes(f));
+    if (invalidFields.length > 0) {
+      return { success: false, error: 'INVALID_FIELD', fields: invalidFields };
+    }
+
+    const setClauses = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
+    const values = [...Object.values(updateObject), game_id];
+
+    try {
+      const result = await this.pool.query(
+        `UPDATE games
+         SET ${setClauses}, updated_at = CURRENT_TIMESTAMP
+         WHERE game_id = $${values.length}
+         RETURNING *`,
+        values
+      );
+
+      return { success: true, data: result.rows[0] || null };
+    } catch (err) {
+      // Handle CHECK constraint violations (e.g. invalid opponent_type/color)
+      if (err.code === '23514') {
+        return { success: false, error: 'CHECK_VIOLATION', constraint: err.constraint };
+      }
+
+      throw err;
+    }
   }
 
   /**
    * Soft delete a game
    *
-   * @param {string} field - Field name to search (e.g., 'id')
+   * @param {string} field - Unique field name to search ('game_id', 'join_code')
    * @param {any} value - Value to match
-   * @returns {Promise<number>} Number of rows affected
+   * @returns {Promise<{success: true, data: number} | {success: false, error: string}>}
    */
   async deleteGame(field, value) {
-    const result = await this.pool.query(
-      `UPDATE games
-       SET is_deleted = true, updated_at = CURRENT_TIMESTAMP
-       WHERE ${field} = $1`,
-      [value]
-    );
+    if (!UNIQUE_FIELDS.includes(field)) {
+      return { success: false, error: 'INVALID_FIELD', field };
+    }
 
-    return result.rowCount;
+    try {
+      const result = await this.pool.query(
+        `UPDATE games
+         SET is_deleted = true, updated_at = CURRENT_TIMESTAMP
+         WHERE ${field} = $1`,
+        [value]
+      );
+
+      return { success: true, data: result.rowCount };
+    } catch (err) {
+      throw err;
+    }
   }
 }

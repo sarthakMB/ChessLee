@@ -179,9 +179,7 @@ async function testMoveRepository(gameId) {
       move_san: 'e4',
       move_from: 'e2',
       move_to: 'e4',
-      fen_after: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
-      is_deleted: false,
-      is_test: true
+      fen_after: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'
     });
     const move1 = move1Result.data;
     logTest('insertMove (move 1)', move1Result.success && move1.move_number === 1, `Move: ${move1.move_san}`);
@@ -194,9 +192,7 @@ async function testMoveRepository(gameId) {
       move_san: 'e5',
       move_from: 'e7',
       move_to: 'e5',
-      fen_after: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2',
-      is_deleted: false,
-      is_test: true
+      fen_after: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2'
     });
     const move2 = move2Result.data;
     logTest('insertMove (move 2)', move2Result.success && move2.move_number === 2, `Move: ${move2.move_san}`);
@@ -209,30 +205,20 @@ async function testMoveRepository(gameId) {
       move_san: 'Nf3',
       move_from: 'g1',
       move_to: 'f3',
-      fen_after: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2',
-      is_deleted: false,
-      is_test: true
+      fen_after: 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2'
     });
     const move3 = move3Result.data;
     logTest('insertMove (move 3)', move3Result.success && move3.move_number === 3, `Move: ${move3.move_san}`);
 
     // Test 4: Find all moves by game_id (should return array)
-    const allMoves = await moveRepository.findMove('game_id', gameId);
-    logTest('findMove by game_id', Array.isArray(allMoves) && allMoves.length === 3,
+    const findResult = await moveRepository.findMoves(gameId);
+    const allMoves = findResult.data;
+    logTest('findMoves by game_id', findResult.success && Array.isArray(allMoves) && allMoves.length === 3,
       `Found ${allMoves.length} moves: ${allMoves.map(m => m.move_san).join(', ')}`);
 
     // Test 5: Verify moves are ordered by move_number
     const isOrdered = allMoves.every((move, i) => move.move_number === i + 1);
     logTest('Moves ordered correctly', isOrdered, 'Ordered by move_number ASC');
-
-    // Test 6: Delete move by game_id (soft delete all moves for game)
-    const deleteCount = await moveRepository.deleteMove('game_id', gameId);
-    logTest('deleteMove by game_id', deleteCount === 3, `Soft deleted ${deleteCount} move(s)`);
-
-    // Test 7: Verify soft delete
-    const deletedMoves = await moveRepository.findMove('game_id', gameId);
-    const allDeleted = deletedMoves.every(m => m.is_deleted === true);
-    logTest('Verify soft delete', allDeleted, 'All moves marked as deleted');
 
   } catch (error) {
     console.error('MoveRepository test failed:', error.message);

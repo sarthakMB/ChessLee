@@ -7,6 +7,8 @@
  * - deleteGuest: Soft delete guest
  */
 
+const UNIQUE_FIELDS = ['guest_id', 'session_id'];
+
 export class GuestRepository {
   constructor(pool) {
     this.pool = pool;
@@ -54,37 +56,53 @@ export class GuestRepository {
   }
 
   /**
-   * Find guest by a specific field
+   * Find guest by a unique field
    *
-   * @param {string} field - Field name to search (e.g., 'id', 'upgraded_to')
+   * @param {string} field - Unique field name to search ('guest_id', 'session_id')
    * @param {any} value - Value to match
-   * @returns {Promise<Object|null>} Guest object or null if not found
+   * @returns {Promise<{success: true, data: Object|null} | {success: false, error: string}>}
    */
   async findGuest(field, value) {
-    const result = await this.pool.query(
-      `SELECT * FROM guests
-       WHERE ${field} = $1`,
-      [value]
-    );
+    if (!UNIQUE_FIELDS.includes(field)) {
+      return { success: false, error: 'INVALID_FIELD', field };
+    }
 
-    return result.rows[0] || null;
+    try {
+      const result = await this.pool.query(
+        `SELECT * FROM guests
+         WHERE ${field} = $1`,
+        [value]
+      );
+
+      return { success: true, data: result.rows[0] || null };
+    } catch (err) {
+      throw err;
+    }
   }
 
   /**
    * Soft delete a guest
    *
-   * @param {string} field - Field name to search (e.g., 'id')
+   * @param {string} field - Unique field name to search ('guest_id', 'session_id')
    * @param {any} value - Value to match
-   * @returns {Promise<number>} Number of rows affected
+   * @returns {Promise<{success: true, data: number} | {success: false, error: string}>}
    */
   async deleteGuest(field, value) {
-    const result = await this.pool.query(
-      `UPDATE guests
-       SET is_deleted = true
-       WHERE ${field} = $1`,
-      [value]
-    );
+    if (!UNIQUE_FIELDS.includes(field)) {
+      return { success: false, error: 'INVALID_FIELD', field };
+    }
 
-    return result.rowCount;
+    try {
+      const result = await this.pool.query(
+        `UPDATE guests
+         SET is_deleted = true
+         WHERE ${field} = $1`,
+        [value]
+      );
+
+      return { success: true, data: result.rowCount };
+    } catch (err) {
+      throw err;
+    }
   }
 }
