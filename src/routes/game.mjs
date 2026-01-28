@@ -1,8 +1,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gameStore } from '../game/store.mjs';
-// TODO: Import GameService (to be created) which will handle DB persistence + in-memory store
+import { gameService } from '../services/index.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,141 +14,105 @@ const sendGameFile = (_req, res) => res.sendFile(gameFile);
 const renderError = (res, { status = 404, message = 'Something went wrong.' } = {}) =>
   res.status(status).render('error', { message });
 
-function sessionGameAuthCheck(req, res, next) {
-  if (!req.session) {
-    return res.status(500).json({ error: 'Session store unavailable' });
-  }
-  console.log('session', req.session);
-  const { id } = req.params;
-  if (req.session.game !== id) {
-    return res.status(403).json({ error: 'Unauthorized' });
-  }
-  const manager = gameStore.getGame(id);
-  if (!manager) {
-    return res.status(404).json({ error: 'Game not in store' });
-  }
-
-  //check if player has currect turn
-  if (manager.turn() !== req.session.game.player.color) { //TODO: fix this
-    return res.status(403).json({ error: 'Not your turn' });
-  }
-
-  req.manager = manager;
-  next();
-}
-
 const handleRedirect = (req, res, location) => {
+  console.log('Redirect function entered');//delete after testing
   if (req.get('HX-Request')) {
+    console.log('if statement entered');//delete after testing
     res.set('HX-Redirect', location);
     return res.status(204).end();
   }
+
+  console.log('if statement not entered');//delete after testing
   return res.redirect(303, location);
 };
 
 router.get('/sandbox', sendGameFile);
 
-router.post('/computer', (req, res) => {
-  if (!req.session) {
-    return res.status(500).json({ error: 'Session store unavailable' });
-  }
+router.post('/computer', async (req, res) => {
   const subjectId = req.session.subject?.id;
-  if (!subjectId) {
-    return res.status(500).json({ error: 'Session subject unavailable' });
-  }
-  //Color of player sent in json
+  const subjectType = req.session.subject?.type ?? 'guest';
   const ownerColor = req.body.color;
 
-  // TODO: Replace with GameService.createGame() which inserts to DB and gets G-prefixed ID
-  const gameId = 'G' + Math.floor(Math.random() * 9223372036854775807);
-  const manager = gameStore.createGame({
-    id: gameId,
-    mode: 'computer',
+  const result = await gameService.createGame('computer', subjectId, subjectType, ownerColor, {
     difficulty: 1200,
-    ownerId: subjectId,
-    ownerColor: ownerColor,
-    opponentId: 'computer',
-    metadata: { engine: true },
-    createdAt: Date.now()
   });
+  console.log("Create computer game result:", result); //delete after testing
 
-  req.session.game = manager.id;
+  if (!result.success) {
+    return renderError(res, { status: 500, message: 'Failed to create game.' });
+  }
 
+  const gameId = result.data.game_id;
   return handleRedirect(req, res, `/game/${gameId}`);
 });
 
-router.post('/friend', (req, res) => {
-  if (!req.session) {
-    return res.status(500).json({ error: 'Session store unavailable' });
-  }
+router.post('/friend', async (req, res) => {
   const subjectId = req.session.subject?.id;
-  if (!subjectId) {
-    return res.status(500).json({ error: 'Session subject unavailable' });
-  }
-  //Color of player sent in json
+  const subjectType = req.session.subject?.type ?? 'guest';
   const ownerColor = req.body.color;
 
-  // TODO: Replace with GameService.createGame() which inserts to DB and gets G-prefixed ID
-  const gameId = 'G' + Math.floor(Math.random() * 9223372036854775807);
-  const joinCode = Math.random().toString(36).slice(2, 10).toUpperCase();
-  const manager = gameStore.createGame({
-    id: gameId,
-    mode: 'friend',
-    ownerId: subjectId,
-    ownerColor: ownerColor,
-    joinCode,
-    createdAt: Date.now()
-  });
+  const result = await gameService.createGame('friend', subjectId, subjectType, ownerColor);
 
-  req.session.game = manager.id;
+  if (!result.success) {
+    return renderError(res, { status: 500, message: 'Failed to create game.' });
+  }
+
+  const game = result.data;
 
   if (req.get('HX-Request')) {
     return res.send(
       `<div class="rounded-md border border-zinc-700 bg-zinc-900/60 px-4 py-3 text-sm text-gray-200">
         Share this code with your friend:
-        <span class="font-mono tracking-wide text-lime-300">${joinCode}</span>
+        <span class="font-mono tracking-wide text-lime-300">${game.join_code}</span>
       </div>`
     );
   }
 
-  return res.json({ joinCode, gameId, inviteUrl: `/game/${gameId}` });
+  return res.json({ joinCode: game.join_code, gameId: game.game_id, inviteUrl: `/game/${game.game_id}` });
 });
 
-router.get('/:id', (req, res) => {
+router.post('/join', async (req, res) => {
+  const subjectId = req.session.subject?.id;
+  const subjectType = req.session.subject?.type ?? 'guest';
+  const joinCode = req.body.joinCode;
+
+  if (!joinCode) {
+    return renderError(res, { status: 400, message: 'Join code is required.' });
+  }
+
+  const result = await gameService.joinGame(joinCode, subjectId, subjectType);
+
+  if (!result.success) {
+    const messages = {
+      GAME_NOT_FOUND: 'Game not found. Check your join code.',
+      GAME_ALREADY_FULL: 'This game already has two players.',
+      CANNOT_JOIN_OWN_GAME: 'You cannot join your own game.',
+    };
+    return renderError(res, { status: 400, message: messages[result.error] ?? 'Failed to join game.' });
+  }
+
+  const gameId = result.data.game_id;
+  return handleRedirect(req, res, `/game/${gameId}`);
+});
+
+router.get('/:id', async (req, res) => {
   const { id } = req.params;
-  const manager = gameStore.getGame(id);
+  const playerId = req.session.subject?.id;
 
-  if (req.session?.game && req.session.game === id && manager) {
-    return sendGameFile(req, res);
+  const result = await gameService.getGame(id);
+  if (!result.success) {
+    return renderError(res);
   }
 
-  return renderError(res);
-});
+  const { game } = result.data;
+  const isOwner = game.owner_id === playerId;
+  const isOpponent = game.opponent_id === playerId;
 
-router.post('/:id/move', sessionGameAuthCheck, (req, res) => {
-  const manager = req.manager;
-  const { move } = req.body;
-  if (manager.makeMove?.(move)) {
-    if(manager.isGameOver()) {
-      gameStore.deleteGame(manager.id);
-      delete req.session.game;
-      return res.json({ success: true });
-    }
-
-    if(manager.mode === 'computer'){
-      manager.makeComputerMove(); //TODO: implement makeComputerMove
-    }
-    return res.json({ success: true });
+  if (!isOwner && !isOpponent) {
+    return renderError(res, { status: 403, message: 'You are not a player in this game.' });
   }
-  return res.json({
-    success: false,
-    currentState: manager.currentState?.()
-  });
-});
 
-//poll for turn
-router.get('/:id/turn', sessionGameAuthCheck, (req, res) => {
-  const manager = req.manager;
-  return res.json({ turn: manager.turn() });
+  return sendGameFile(req, res);
 });
 
 export default router;

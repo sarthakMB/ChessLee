@@ -48,6 +48,8 @@ const shutdown = async () => {
     console.log('PostgreSQL: Pool closed successfully');
   } catch (err) {
     console.error('PostgreSQL: Error closing pool', err);
+  }finally {
+    process.exit(0);
   }
 };
 

@@ -60,16 +60,18 @@ app.use(
 
 
 const ensureSubject = async (req, res, next) => { // if no subject in session, create guest subject
-  if (!req.session) {
+  if (!req.session) { // TODO : evalute if this is needed
     return res.status(500).json({ error: 'Session store unavailable' });
   }
+  const value = await redisClient.get("sess:" + req.sessionID);
+  console.log("Redis test key value:", value); //delete after testing
 
   const subject = req.session.subject;
   if (
-    subject &&
-    typeof subject === 'object' &&
-    typeof subject.id === 'string' &&
-    typeof subject.type === 'string'
+    subject
+    // && typeof subject === 'object' &&
+    // typeof subject.id === 'string' &&
+    // typeof subject.type === 'string'
   ) {
     return next();
   }
@@ -82,6 +84,8 @@ const ensureSubject = async (req, res, next) => { // if no subject in session, c
   });
 
   if (!result.success) {
+
+    console.log('Failed to create guest:', result.error, req.sessionID); //delete after testing
     return res.status(500).json({ error: 'Failed to create guest' });
   }
 

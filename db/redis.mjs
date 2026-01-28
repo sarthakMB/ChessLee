@@ -65,6 +65,8 @@ const shutdown = async () => {
     console.log('Redis: Connection closed successfully');
   } catch (err) {
     console.error('Redis: Error closing connection:', err.message);
+  }finally {
+    process.exit(0);
   }
 };
 
