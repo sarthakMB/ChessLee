@@ -68,7 +68,6 @@ async function testGuestRepository() {
   try {
     // Test 1: Insert guest (DB generates T-prefixed ID)
     const result = await guestRepository.insertGuest({
-      session_id: 'test_session_' + Date.now(),
       is_deleted: false,
       is_test: true
     });
@@ -103,7 +102,6 @@ async function testGameRepository() {
   try {
     // Create a guest to own the game (DB generates T-prefixed ID)
     const guestResult = await guestRepository.insertGuest({
-      session_id: 'test_session_game_' + Date.now(),
       is_deleted: false,
       is_test: true
     });

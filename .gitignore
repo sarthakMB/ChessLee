@@ -5,7 +5,7 @@ yarn-error.log*
 pnpm-debug.log*
 .DS_Store
 .env
-.env.*
+.env.*.local
 dist
 coverage
 .idea
@@ -14,5 +14,6 @@ coverage
 
 # Development and planning files
 PLAN.md
+TODO.md
 dev_private/
 .claude/private/
