@@ -5,6 +5,8 @@
  * Reads from environment variables and provides sensible defaults.
  */
 
+import logger from '../utils/logger.mjs';
+
 export const databaseConfig = {
   // PostgreSQL Configuration
   postgres: {
@@ -22,7 +24,7 @@ export const databaseConfig = {
       reconnectStrategy: (retries) => {
         // Exponential backoff: 50ms, 100ms, 200ms, etc., max 3000ms
         if (retries > 10) {
-          console.error('Redis: Max reconnection attempts reached');
+          logger.error({ retries }, 'Redis: Max reconnection attempts reached');
           return new Error('Max reconnection attempts reached');
         }
         return Math.min(retries * 50, 3000);
@@ -45,9 +47,9 @@ export const databaseConfig = {
 // Validation: Warn if using default values in production
 if (databaseConfig.isProduction) {
   if (databaseConfig.session.secret === 'dev-secret-change-in-production') {
-    console.warn('WARNING: Using default SESSION_SECRET in production!');
+    logger.warn('Using default SESSION_SECRET in production!');
   }
   if (databaseConfig.postgres.connectionString.includes('localhost')) {
-    console.warn('WARNING: Using localhost database in production!');
+    logger.warn('Using localhost database in production!');
   }
 }

@@ -17,6 +17,8 @@
 
 import pg from 'pg';
 import { databaseConfig } from '../config/database.mjs';
+import { dbPostgresDBG } from '../utils/debug.mjs';
+import logger from '../utils/logger.mjs';
 
 const { Pool } = pg;
 
@@ -25,30 +27,26 @@ const pool = new Pool(databaseConfig.postgres);
 
 // Log connection events (helpful for debugging)
 pool.on('connect', () => {
-  if (databaseConfig.isDevelopment) {
-    console.log('PostgreSQL: New client connected to pool');
-  }
+  dbPostgresDBG('New client connected to pool');
 });
 
-pool.on('error', (err, client) => {
-  console.error('PostgreSQL: Unexpected error on idle client', err);
+pool.on('error', (err) => {
+  logger.error({ err }, 'PostgreSQL idle client error');
 });
 
 pool.on('remove', () => {
-  if (databaseConfig.isDevelopment) {
-    console.log('PostgreSQL: Client removed from pool');
-  }
+  dbPostgresDBG('Client removed from pool');
 });
 
 // Graceful shutdown: close all connections when app exits
 const shutdown = async () => {
-  console.log('PostgreSQL: Closing connection pool...');
+  dbPostgresDBG('Closing connection pool...');
   try {
     await pool.end();
-    console.log('PostgreSQL: Pool closed successfully');
+    dbPostgresDBG('Pool closed successfully');
   } catch (err) {
-    console.error('PostgreSQL: Error closing pool', err);
-  }finally {
+    logger.error({ err }, 'PostgreSQL shutdown error');
+  } finally {
     process.exit(0);
   }
 };

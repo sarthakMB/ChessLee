@@ -111,3 +111,42 @@ Rapid prototyping. The `GameStore` interface (`createGame`, `getGame`, `deleteGa
 
 **Why Express 5?**
 Latest stable release with native promise support in route handlers. Modern async/await patterns without wrapper libraries.
+
+---
+
+## Logging
+
+This project uses two logging systems with distinct purposes:
+
+| | **debug** | **Pino** |
+|---|-----------|----------|
+| **Purpose** | Dev-time tracing | Production logging |
+| **Toggle** | `DEBUG=app:*` env var | Log levels (info, warn, error) |
+| **Output** | Human-readable, colored | JSON (for ELK/Datadog/CloudWatch) |
+| **When** | Development only | Always (dev + production) |
+
+**Rule of thumb:**
+- `debug` = "Would I delete this console.log before committing?" → Use debug
+- `Pino` = "Should this appear in production logs?" → Use Pino
+
+### Debug Namespaces
+
+```bash
+DEBUG=app:*              # All debug output
+DEBUG=app:db:*           # Database connections only
+DEBUG=app:services:*     # Services only
+DEBUG=app:routes:*       # Routes only
+```
+
+Debug instances use the `DBG` suffix for clarity (e.g., `servicesGameDBG`, `routesGameDBG`).
+
+### Pino Log Levels
+
+| Level | Use for |
+|-------|---------|
+| `trace` | Static asset requests (filtered) |
+| `debug` | Detailed debugging (dev only) |
+| `info` | HTTP requests, startup messages |
+| `warn` | Recoverable issues, deprecations |
+| `error` | Failures requiring attention |
+| `fatal` | App cannot continue |

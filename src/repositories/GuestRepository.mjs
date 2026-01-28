@@ -7,7 +7,7 @@
  * - deleteGuest: Soft delete guest
  */
 
-const UNIQUE_FIELDS = ['guest_id', 'session_id'];
+const UNIQUE_FIELDS = ['guest_id'];
 
 export class GuestRepository {
   constructor(pool) {
@@ -18,7 +18,6 @@ export class GuestRepository {
    * Insert a new guest
    *
    * @param {Object} guestObject - Object with fields to insert
-   * @param {string} guestObject.session_id - Session ID linking guest to their session
    * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
    */
   async insertGuest(guestObject) {
@@ -38,10 +37,6 @@ export class GuestRepository {
     } catch (err) {
       // Handle expected constraint violations
       if (err.code === '23505') { // PostgreSQL UNIQUE violation
-        if (err.constraint === 'guests_session_id_key') {
-          return { success: false, error: 'SESSION_ID_TAKEN' };
-        }
-        // Unknown constraint
         return { success: false, error: 'CONSTRAINT_VIOLATION', constraint: err.constraint };
       }
 
@@ -58,7 +53,7 @@ export class GuestRepository {
   /**
    * Find guest by a unique field
    *
-   * @param {string} field - Unique field name to search ('guest_id', 'session_id')
+   * @param {string} field - Unique field name to search ('guest_id')
    * @param {any} value - Value to match
    * @returns {Promise<{success: true, data: Object|null} | {success: false, error: string}>}
    */
@@ -83,7 +78,7 @@ export class GuestRepository {
   /**
    * Soft delete a guest
    *
-   * @param {string} field - Unique field name to search ('guest_id', 'session_id')
+   * @param {string} field - Unique field name to search ('guest_id')
    * @param {any} value - Value to match
    * @returns {Promise<{success: true, data: number} | {success: false, error: string}>}
    */

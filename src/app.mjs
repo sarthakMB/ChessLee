@@ -10,8 +10,11 @@ import registerRouter from './routes/register.mjs';
 import gameRouter from './routes/game.mjs';
 
 import requestLogger from '../utils/request_logger.mjs';
+import logger from '../utils/logger.mjs';
+import { middlewareDBG } from '../utils/debug.mjs';
 import { redisClient, initDatabases } from '../db/index.mjs';
 import { guestRepository } from './repositories/index.mjs';
+import { log } from 'node:console';
 
 dotenv.config();
 
@@ -40,7 +43,7 @@ const sessionStore = process.env.REDIS_URL
   : undefined; // Falls back to MemoryStore when undefined
 
 if (!sessionStore) {
-  console.warn('WARNING: Using MemoryStore for sessions (not for production!)');
+  logger.warn('Using MemoryStore for sessions (not for production!)');
 }
 
 app.use(
@@ -59,37 +62,33 @@ app.use(
 );
 
 
-const ensureSubject = async (req, res, next) => { // if no subject in session, create guest subject
-  if (!req.session) { // TODO : evalute if this is needed
+const ensureSubject = async (req, res, next) => {
+  if (!req.session) {
+    logger.error('Session store unavailable');
     return res.status(500).json({ error: 'Session store unavailable' });
   }
-  const value = await redisClient.get("sess:" + req.sessionID);
-  console.log("Redis test key value:", value); //delete after testing
 
   const subject = req.session.subject;
-  if (
-    subject
-    // && typeof subject === 'object' &&
-    // typeof subject.id === 'string' &&
-    // typeof subject.type === 'string'
-  ) {
+  if (subject && subject.id) {
+    middlewareDBG('Subject exists: %s (%s)', subject.id, subject.type);
+    if(!subject.type) logger.warn('Subject type missing for subject %s', subject.id);
     return next();
   }
 
   // Insert guest into DB — DB generates T-prefixed ID
+  middlewareDBG('Creating new guest for session %s', req.sessionID);
   const result = await guestRepository.insertGuest({
-    session_id: req.sessionID,
     is_deleted: false,
     is_test: false
   });
 
   if (!result.success) {
-
-    console.log('Failed to create guest:', result.error, req.sessionID); //delete after testing
+    logger.error({ error: result.error, sessionId: req.sessionID }, 'Failed to create guest');
     return res.status(500).json({ error: 'Failed to create guest' });
   }
 
-  req.session.subject = { id: result.data.id, type: 'guest' };
+  middlewareDBG('Guest created: %s', result.data.guest_id);
+  req.session.subject = { id: result.data.guest_id, type: 'guest' };
   return next();
 };
 
@@ -107,10 +106,10 @@ async function startServer() {
     }
 
     app.listen(port, () => {
-      console.log(`Chess app listening on port1 ${port}`);
+      logger.info({ port }, 'Chess app listening');
     });
   } catch (err) {
-    console.error('Failed to start server:', err);
+    logger.fatal({ err }, 'Failed to start server');
     process.exit(1);
   }
 }

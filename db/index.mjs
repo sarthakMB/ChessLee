@@ -17,6 +17,8 @@
  * - Clear separation of concerns (repositories import from here, not directly from pg/redis)
  */
 
+import logger from '../utils/logger.mjs';
+
 // PostgreSQL exports
 export { default as pool, query, getClient, getPoolStats } from './pool.mjs';
 
@@ -45,7 +47,7 @@ export {
  * - Any connection errors are caught early (fail fast)
  */
 export async function initDatabases() {
-  console.log('Initializing database connections...');
+  logger.info('Initializing database connections...');
 
   try {
     // Connect to Redis
@@ -55,11 +57,11 @@ export async function initDatabases() {
     // Test PostgreSQL connection
     const { query } = await import('./pool.mjs');
     const result = await query('SELECT NOW() as current_time');
-    console.log(`PostgreSQL: Connected successfully (${result.rows[0].current_time})`);
+    logger.info({ time: result.rows[0].current_time }, 'PostgreSQL connected');
 
-    console.log('All database connections ready');
+    logger.info('All database connections ready');
   } catch (err) {
-    console.error('Database initialization failed:', err);
+    logger.error({ err }, 'Database initialization failed');
     throw err; // Fail fast - don't start the app if DB is down
   }
 }

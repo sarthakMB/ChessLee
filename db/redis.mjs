@@ -19,31 +19,31 @@
 
 import { createClient } from 'redis';
 import { databaseConfig } from '../config/database.mjs';
+import { dbRedisDBG } from '../utils/debug.mjs';
+import logger from '../utils/logger.mjs';
 
 // Create Redis client
 const redisClient = createClient(databaseConfig.redis);
 
 // Connection event handlers
 redisClient.on('connect', () => {
-  if (databaseConfig.isDevelopment) {
-    console.log('Redis: Connecting...');
-  }
+  dbRedisDBG('Connecting...');
 });
 
 redisClient.on('ready', () => {
-  console.log('Redis: Connected and ready');
+  dbRedisDBG('Connected and ready');
 });
 
 redisClient.on('error', (err) => {
-  console.error('Redis: Error:', err.message);
+  logger.error({ err }, 'Redis connection error');
 });
 
 redisClient.on('reconnecting', () => {
-  console.log('Redis: Reconnecting...');
+  dbRedisDBG('Reconnecting...');
 });
 
 redisClient.on('end', () => {
-  console.log('Redis: Connection closed');
+  dbRedisDBG('Connection closed');
 });
 
 // Connect to Redis
@@ -59,13 +59,13 @@ export const connectRedis = async () => {
 
 // Graceful shutdown: close connection when app exits
 const shutdown = async () => {
-  console.log('Redis: Closing connection...');
+  dbRedisDBG('Closing connection...');
   try {
     await redisClient.quit();
-    console.log('Redis: Connection closed successfully');
+    dbRedisDBG('Connection closed successfully');
   } catch (err) {
-    console.error('Redis: Error closing connection:', err.message);
-  }finally {
+    logger.error({ err }, 'Redis shutdown error');
+  } finally {
     process.exit(0);
   }
 };
