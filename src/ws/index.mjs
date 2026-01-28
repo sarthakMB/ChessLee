@@ -1,6 +1,8 @@
 import { Server } from 'socket.io';
 import logger from '../../utils/logger.mjs';
 import { wsDBG } from '../../utils/debug.mjs';
+import { gameService } from '../services/index.mjs';
+import { registerGameHandlers } from './gameHandlers.mjs';
 
 /**
  * Sets up the Socket.IO server with session sharing.
@@ -34,6 +36,9 @@ export function setupWebSocket(server, sessionMiddleware) {
       wsDBG('Socket connected: %s (no subject in session)', socket.id);
       logger.warn({ socketId: socket.id }, 'Socket connected without subject');
     }
+
+    // Register game event handlers (join_game, move, etc.)
+    registerGameHandlers(io, socket, gameService);
 
     socket.on('disconnect', (reason) => {
       wsDBG('Socket disconnected: %s (reason: %s)', socket.id, reason);
