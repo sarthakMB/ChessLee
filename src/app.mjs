@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createServer } from 'node:http';
 import dotenv from 'dotenv';
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
@@ -8,13 +9,13 @@ import homeRouter from './routes/home.mjs';
 import loginRouter from './routes/login.mjs';
 import registerRouter from './routes/register.mjs';
 import gameRouter from './routes/game.mjs';
+import { setupWebSocket } from './ws/index.mjs';
 
 import requestLogger from '../utils/request_logger.mjs';
 import logger from '../utils/logger.mjs';
 import { middlewareDBG } from '../utils/debug.mjs';
 import { redisClient, initDatabases } from '../db/index.mjs';
 import { guestRepository } from './repositories/index.mjs';
-import { log } from 'node:console';
 
 dotenv.config();
 
@@ -46,20 +47,21 @@ if (!sessionStore) {
   logger.warn('Using MemoryStore for sessions (not for production!)');
 }
 
-app.use(
-  session({
-    name: 'chess.sid',
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    store: sessionStore,
-    cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production'
-    }
-  })
-);
+// Session middleware - extracted to variable so it can be shared with Socket.IO
+const sessionMiddleware = session({
+  name: 'chess.sid',
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  store: sessionStore,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  }
+});
+
+app.use(sessionMiddleware);
 
 
 const ensureSubject = async (req, res, next) => {
@@ -97,6 +99,14 @@ app.use('/login', loginRouter);
 app.use('/register', registerRouter);
 app.use('/game', ensureSubject, gameRouter);
 
+// Wrap Express in HTTP server so Socket.IO can share it
+// (app.listen() secretly creates an HTTP server; we make it explicit)
+const server = createServer(app);
+
+// Attach Socket.IO to the HTTP server
+// Session middleware is shared so socket connections have access to session data
+setupWebSocket(server, sessionMiddleware);
+
 // Initialize databases before starting server
 async function startServer() {
   try {
@@ -105,7 +115,7 @@ async function startServer() {
       await initDatabases();
     }
 
-    app.listen(port, () => {
+    server.listen(port, () => {
       logger.info({ port }, 'Chess app listening');
     });
   } catch (err) {

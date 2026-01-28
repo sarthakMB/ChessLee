@@ -177,6 +177,19 @@
   <script type="module" src="/js/chess.js"></script>
 
   <script type="module" src="/js/game.js"></script>
+
+  <!-- Socket.IO client (served automatically by Socket.IO server) -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Temporary test: verify Socket.IO connection works -->
+  <script>
+    const socket = io();
+    socket.on('connect', () => {
+      console.log('[Socket.IO] Connected:', socket.id);
+    });
+    socket.on('disconnect', (reason) => {
+      console.log('[Socket.IO] Disconnected:', reason);
+    });
+  </script>
 </body>
 
 </html>

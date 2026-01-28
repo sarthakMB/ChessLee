@@ -43,3 +43,6 @@ export const repoUserDBG = debug('app:repo:user');
 export const repoGuestDBG = debug('app:repo:guest');
 export const repoGameDBG = debug('app:repo:game');
 export const repoMoveDBG = debug('app:repo:move');
+
+// WebSocket
+export const wsDBG = debug('app:ws');
