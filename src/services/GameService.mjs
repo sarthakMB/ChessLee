@@ -184,7 +184,14 @@ export class GameService {
       return { success: false, error: 'NOT_YOUR_TURN' };
     }
 
-    const moveResult = chess.move(moveInput);
+    let moveResult;
+    try {
+      moveResult = chess.move(moveInput);
+    } catch {
+      servicesGameDEBUG('makeMove: invalid move (chess.js threw)');
+      return { success: false, error: 'INVALID_MOVE' };
+    }
+
     if (!moveResult) {
       servicesGameDEBUG('makeMove: invalid move');
       return { success: false, error: 'INVALID_MOVE' };

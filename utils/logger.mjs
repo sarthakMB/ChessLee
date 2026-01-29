@@ -18,40 +18,28 @@
  */
 
 import pino from 'pino';
+import pretty from 'pino-pretty';
 
 const isDev = process.env.NODE_ENV !== 'production';
 const pinoMode = process.env.PINO || (isDev ? 'compact' : undefined);
 
 export { pinoMode };
 
-// Base configuration
-const config = {
-  level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
-};
+let logger;
 
-// Configure pino-pretty for verbose/compact modes
-if (pinoMode === 'verbose') {
-  config.transport = {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'HH:MM:ss',
-      ignore: 'pid,hostname',
-    },
-  };
-} else if (pinoMode === 'compact') {
-  config.transport = {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'HH:MM:ss',
-      ignore: 'pid,hostname,reqId,responseTime',
-      singleLine: true,
-    },
-  };
+if (isDev) {
+  // SYNC: pino-pretty as a stream (not worker thread)
+  // Logs stay in order with debug() output
+  const prettyStream = pretty({
+    colorize: true,
+    translateTime: 'HH:MM:ss',
+    ignore: pinoMode === 'compact' ? 'pid,hostname,reqId,responseTime' : 'pid,hostname',
+    singleLine: pinoMode === 'compact',
+  });
+  logger = pino({ level: process.env.LOG_LEVEL || 'debug' }, prettyStream);
+} else {
+  // PROD: JSON output for log aggregators (sync by default, high performance)
+  logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 }
-// Production (no PINO set): JSON output, no pino-pretty
-
-const logger = pino(config);
 
 export default logger;

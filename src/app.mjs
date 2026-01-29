@@ -81,7 +81,7 @@ const ensureSubject = async (req, res, next) => {
   middlewareDEBUG('Creating new guest for session %s', req.sessionID);
   const result = await guestRepository.insertGuest({
     is_deleted: false,
-    is_test: false
+    is_test: process.env.NODE_ENV !== 'production',
   });
 
   if (!result.success) {
