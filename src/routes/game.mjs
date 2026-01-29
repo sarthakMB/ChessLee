@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gameService } from '../services/index.mjs';
 import { routesGameDEBUG } from '../../utils/debug.mjs';
+import logger from '../../utils/logger.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,6 +37,7 @@ router.post('/computer', async (req, res) => {
 
   if (!ownerColor || !['white', 'black'].includes(ownerColor)) {
     routesGameDEBUG('Invalid color: %s', ownerColor);
+    logger.warn({ subjectId, ownerColor, route: 'POST /game/computer' }, 'Invalid color');
     return renderError(res, { status: 400, message: 'Color must be "white" or "black".' });
   }
 
@@ -46,6 +48,7 @@ router.post('/computer', async (req, res) => {
 
   if (!result.success) {
     routesGameDEBUG('Failed to create game: %s', result.error);
+    logger.warn({ subjectId, ownerColor, code: result.error, route: 'POST /game/computer' }, 'Failed to create game');
     return renderError(res, { status: 500, message: 'Failed to create game.' });
   }
 
@@ -61,6 +64,7 @@ router.post('/friend', async (req, res) => {
 
   if (!ownerColor || !['white', 'black'].includes(ownerColor)) {
     routesGameDEBUG('Invalid color: %s', ownerColor);
+    logger.warn({ subjectId, ownerColor, route: 'POST /game/friend' }, 'Invalid color');
     return renderError(res, { status: 400, message: 'Color must be "white" or "black".' });
   }
 
@@ -69,6 +73,7 @@ router.post('/friend', async (req, res) => {
 
   if (!result.success) {
     routesGameDEBUG('Failed to create game: %s', result.error);
+    logger.warn({ subjectId, ownerColor, code: result.error, route: 'POST /game/friend' }, 'Failed to create game');
     return renderError(res, { status: 500, message: 'Failed to create game.' });
   }
 
@@ -93,6 +98,7 @@ router.post('/join', async (req, res) => {
   const joinCode = req.body.joinCode;
 
   if (!joinCode) {
+    logger.warn({ subjectId, route: 'POST /game/join' }, 'Missing join code');
     return renderError(res, { status: 400, message: 'Join code is required.' });
   }
 
@@ -101,6 +107,7 @@ router.post('/join', async (req, res) => {
 
   if (!result.success) {
     routesGameDEBUG('Failed to join game: %s', result.error);
+    logger.warn({ subjectId, joinCode, code: result.error, route: 'POST /game/join' }, 'Failed to join game');
     const messages = {
       GAME_NOT_FOUND: 'Game not found. Check your join code.',
       GAME_ALREADY_FULL: 'This game already has two players.',
@@ -122,6 +129,7 @@ router.get('/:id', async (req, res) => {
   const result = await gameService.getGame(id);
   if (!result.success) {
     routesGameDEBUG('Game not found: %s', id);
+    logger.warn({ playerId, gameId: id, code: result.error, route: 'GET /game/:id' }, 'Game not found');
     return renderError(res);
   }
 
@@ -131,6 +139,7 @@ router.get('/:id', async (req, res) => {
 
   if (!isOwner && !isOpponent) {
     routesGameDEBUG('Access denied: player=%s not in game=%s', playerId, id);
+    logger.warn({ playerId, gameId: id, route: 'GET /game/:id' }, 'Access denied: not a player');
     return renderError(res, { status: 403, message: 'You are not a player in this game.' });
   }
 

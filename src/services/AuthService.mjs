@@ -13,16 +13,6 @@ import bcrypt from 'bcrypt';
 
 const SALT_ROUNDS = 12;
 
-/**
- * Strips password_hash from user object.
- * NEVER return password hashes to callers.
- */
-function omitPasswordHash(user) {
-  if (!user) return null;
-  const { password_hash, ...rest } = user;
-  return rest;
-}
-
 export class AuthService {
   constructor(userRepository, guestRepository) {
     this.userRepo = userRepository;
@@ -65,7 +55,7 @@ export class AuthService {
       return result; // USERNAME_TAKEN or EMAIL_TAKEN
     }
 
-    return { success: true, user: omitPasswordHash(result.data) };
+    return { success: true, user: _omitPasswordHash(result.data) };
   }
 
   /**
@@ -91,8 +81,20 @@ export class AuthService {
       return { success: false, error: 'INVALID_CREDENTIALS' };
     }
 
-    return { success: true, user: omitPasswordHash(user) };
+    return { success: true, user: _omitPasswordHash(user) };
   }
 
   // upgradeGuest(guestId, userId) - TODO: implement later
+}
+
+// --- Private Helpers ---
+
+/**
+ * Strips password_hash from user object.
+ * NEVER return password hashes to callers.
+ */
+function _omitPasswordHash(user) {
+  if (!user) return null;
+  const { password_hash, ...rest } = user;
+  return rest;
 }

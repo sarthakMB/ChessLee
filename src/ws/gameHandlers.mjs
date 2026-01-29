@@ -7,9 +7,12 @@
  * Events:
  *   join_game  → client joins a game room, receives current state
  *   move       → client makes a move, broadcast to room
- *   move_error → server rejects invalid move (sent to sender only)
+ *   error      → server rejects request (sent to sender only)
  *   move_made  → confirmed move broadcast to all players in room
  *   game_over  → game ended, broadcast result to room
+ *
+ * Error format (consistent across all error events):
+ *   { code: 'ERROR_CODE', message: 'Human readable message' }
  */
 
 import { Chess } from 'chess.js';
@@ -41,52 +44,62 @@ export function registerGameHandlers(io, socket, gameService) {
    * Client sends: { gameId }
    * Server responds: game_state event with { fen, turn, moveCount, you: { color } }
    */
-  socket.on('join_game', async ({ gameId }) => {
-    wsDEBUG('join_game: socket=%s player=%s game=%s', socket.id, playerId, gameId);
+  socket.on('join_game', async (payload = {}) => {
+    const { gameId } = payload;
 
-    if (!gameId) {
-      socket.emit('error', { message: 'gameId required' });
-      return;
+    try {
+      wsDEBUG('join_game: socket=%s player=%s game=%s', socket.id, playerId, gameId);
+
+      if (!gameId) {
+        logger.warn({ socketId: socket.id, playerId, code: 'MISSING_GAME_ID' }, 'join_game rejected: missing gameId');
+        socket.emit('error', { code: 'MISSING_GAME_ID', message: 'gameId is required' });
+        return;
+      }
+
+      const result = await gameService.getGame(gameId);
+
+      if (!result.success) {
+        wsDEBUG('join_game: game not found %s', gameId);
+        logger.warn({ socketId: socket.id, playerId, gameId, code: result.error }, 'join_game rejected: game not found');
+        socket.emit('error', { code: result.error, message: 'Game not found' });
+        return;
+      }
+
+      const { game, fen, moveCount } = result.data;
+
+      // Authorization: player must be owner or opponent
+      const playerColor = _resolvePlayerColor(playerId, game);
+      if (!playerColor) {
+        wsDEBUG('join_game: player %s not in game %s', playerId, gameId);
+        logger.warn({ socketId: socket.id, playerId, gameId, code: 'NOT_IN_GAME' }, 'join_game rejected: not a player');
+        socket.emit('error', { code: 'NOT_IN_GAME', message: 'You are not a player in this game' });
+        return;
+      }
+
+      // Store gameId on socket for disconnect handling (future use)
+      socket.data.gameId = gameId;
+      socket.data.playerId = playerId;
+
+      // Join the Socket.IO room for this game
+      socket.join(gameId);
+      wsDEBUG('join_game: socket %s joined room %s', socket.id, gameId);
+
+      // Extract whose turn it is from FEN (w or b after first space)
+      const turn = fen.split(' ')[1]; // 'w' or 'b'
+
+      // Send current game state back to the joining client
+      socket.emit('game_state', {
+        fen,
+        turn,
+        moveCount,
+        you: { color: playerColor },
+      });
+
+      logger.info({ socketId: socket.id, gameId, playerId, color: playerColor }, 'Player joined game room');
+    } catch (err) {
+      logger.error({ err, socketId: socket.id, playerId, gameId }, 'join_game handler error');
+      socket.emit('error', { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' });
     }
-
-    const result = await gameService.getGame(gameId);
-
-    if (!result.success) {
-      wsDEBUG('join_game: game not found %s', gameId);
-      socket.emit('error', { message: 'Game not found' });
-      return;
-    }
-
-    const { game, fen, moveCount } = result.data;
-
-    // Authorization: player must be owner or opponent
-    const playerColor = resolvePlayerColor(playerId, game);
-    if (!playerColor) {
-      wsDEBUG('join_game: player %s not in game %s', playerId, gameId);
-      socket.emit('error', { message: 'You are not a player in this game' });
-      return;
-    }
-
-    // Store gameId on socket for disconnect handling (future use)
-    socket.data.gameId = gameId;
-    socket.data.playerId = playerId;
-
-    // Join the Socket.IO room for this game
-    socket.join(gameId);
-    wsDEBUG('join_game: socket %s joined room %s', socket.id, gameId);
-
-    // Extract whose turn it is from FEN (w or b after first space)
-    const turn = fen.split(' ')[1]; // 'w' or 'b'
-
-    // Send current game state back to the joining client
-    socket.emit('game_state', {
-      fen,
-      turn,
-      moveCount,
-      you: { color: playerColor },
-    });
-
-    logger.info({ socketId: socket.id, gameId, playerId, color: playerColor }, 'Player joined game room');
   });
 
   /**
@@ -94,52 +107,63 @@ export function registerGameHandlers(io, socket, gameService) {
    *
    * Client sends: { gameId, from, to, promotion? }
    * Server broadcasts to room: move_made event with { from, to, promotion, fen, turn, isGameOver }
-   * On error: move_error event to sender only
+   * On error: error event to sender only
    */
-  socket.on('move', async ({ gameId, from, to, promotion }) => {
-    wsDEBUG('move: socket=%s player=%s game=%s move=%s-%s', socket.id, playerId, gameId, from, to);
+  socket.on('move', async (payload = {}) => {
+    const { gameId, from, to, promotion } = payload;
 
-    if (!gameId || !from || !to) {
-      socket.emit('move_error', { error: 'Missing required fields: gameId, from, to' });
-      return;
-    }
+    try {
+      wsDEBUG('move: socket=%s player=%s game=%s move=%s-%s', socket.id, playerId, gameId, from, to);
 
-    const result = await gameService.makeMove(gameId, playerId, { from, to, promotion });
+      if (!gameId || !from || !to) {
+        logger.warn({ socketId: socket.id, playerId, gameId, from, to, code: 'MISSING_FIELDS' }, 'move rejected: missing fields');
+        socket.emit('error', { code: 'MISSING_FIELDS', message: 'Missing required fields: gameId, from, to' });
+        return;
+      }
 
-    if (!result.success) {
-      wsDEBUG('move: rejected error=%s', result.error);
-      socket.emit('move_error', { error: result.error });
-      return;
-    }
+      const result = await gameService.makeMove(gameId, playerId, { from, to, promotion });
 
-    const { move, isGameOver, fen } = result.data;
-    const turn = fen.split(' ')[1];
+      if (!result.success) {
+        wsDEBUG('move: rejected error=%s', result.error);
+        logger.warn({ socketId: socket.id, playerId, gameId, from, to, code: result.error }, 'move rejected');
+        socket.emit('error', { code: result.error, message: _errorCodeToMessage(result.error) });
+        return;
+      }
 
-    wsDEBUG('move: accepted, broadcasting to room %s', gameId);
+      const { move, isGameOver, fen } = result.data;
+      const turn = fen.split(' ')[1];
 
-    // Broadcast confirmed move to ALL players in the room (including sender)
-    io.to(gameId).emit('move_made', {
-      from: move.move_from,
-      to: move.move_to,
-      promotion: move.promotion,
-      fen,
-      turn,
-      isGameOver,
-    });
+      wsDEBUG('move: accepted, broadcasting to room %s', gameId);
 
-    logger.info({ gameId, playerId, from, to, promotion, isGameOver }, 'Move made');
+      // Broadcast confirmed move to ALL players in the room (including sender)
+      io.to(gameId).emit('move_made', {
+        from: move.move_from,
+        to: move.move_to,
+        promotion: move.promotion,
+        fen,
+        turn,
+        isGameOver,
+      });
 
-    // If game is over, emit game_over with result details
-    if (isGameOver) {
-      const gameOverResult = determineGameResult(fen);
-      wsDEBUG('move: game over, result=%o', gameOverResult);
+      logger.info({ gameId, playerId, from, to, promotion, isGameOver }, 'Move made');
 
-      io.to(gameId).emit('game_over', gameOverResult);
+      // If game is over, emit game_over with result details
+      if (isGameOver) {
+        const gameOverResult = _determineGameResult(fen);
+        wsDEBUG('move: game over, result=%o', gameOverResult);
 
-      logger.info({ gameId, ...gameOverResult }, 'Game over');
+        io.to(gameId).emit('game_over', gameOverResult);
+
+        logger.info({ gameId, ...gameOverResult }, 'Game over');
+      }
+    } catch (err) {
+      logger.error({ err, socketId: socket.id, playerId, gameId, from, to }, 'move handler error');
+      socket.emit('error', { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' });
     }
   });
 }
+
+// --- Private Helpers ---
 
 /**
  * Resolves the player's color in a game.
@@ -148,7 +172,7 @@ export function registerGameHandlers(io, socket, gameService) {
  * @param {Object} game
  * @returns {'w' | 'b' | null} - 'w' for white, 'b' for black, null if not in game
  */
-function resolvePlayerColor(playerId, game) {
+function _resolvePlayerColor(playerId, game) {
   if (playerId === game.owner_id) {
     return game.owner_color === 'white' ? 'w' : 'b';
   }
@@ -159,12 +183,28 @@ function resolvePlayerColor(playerId, game) {
 }
 
 /**
+ * Converts error codes to human-readable messages.
+ *
+ * @param {string} code
+ * @returns {string}
+ */
+function _errorCodeToMessage(code) {
+  const messages = {
+    GAME_NOT_FOUND: 'Game not found',
+    PLAYER_NOT_IN_GAME: 'You are not a player in this game',
+    NOT_YOUR_TURN: 'It is not your turn',
+    INVALID_MOVE: 'Invalid move',
+  };
+  return messages[code] || 'An error occurred';
+}
+
+/**
  * Determines the game result from the final FEN.
  *
  * @param {string} fen
  * @returns {{ result: string, reason: string }}
  */
-function determineGameResult(fen) {
+function _determineGameResult(fen) {
   const chess = new Chess(fen);
 
   if (chess.isCheckmate()) {

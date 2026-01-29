@@ -58,6 +58,13 @@ Server returns HTML fragments or redirect headers for HTMX requests.
 
 ## Conventions
 
+### Private Helpers
+- Public exports first, private helpers last
+- Add `// --- Private Helpers ---` separator above private helpers
+- Private helpers use leading underscore (`_helperName`)
+- Class-private helpers are underscored methods inside the class
+- Module-private helpers are non-exported functions at file bottom
+
 ### Route Organization
 - One router per resource/feature area
 - Routers mounted in `src/app.mjs:62-65`

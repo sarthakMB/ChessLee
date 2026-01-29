@@ -9,7 +9,11 @@
     "dev:css": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./public/css/output.css --watch",
     "migrate": "node db/migrations/migrate.mjs",
     "dump-schema": "docker-compose exec postgres pg_dump -U chess_user -d chess_dev --schema-only --no-owner > db/schema.sql",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:ws": "node scripts/ws-smoke-test.mjs",
+    "test:ws:single": "node scripts/ws-test-single-player.mjs",
+    "test:ws:multi": "node scripts/ws-test-two-player.mjs",
+    "test:ws:auth": "node scripts/ws-test-authorization.mjs"
   },
   "author": "",
   "license": "ISC",
@@ -33,6 +37,7 @@
     "tailwindcss": "^4.1.17"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "socket.io-client": "^4.8.3"
   }
 }

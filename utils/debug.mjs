@@ -46,3 +46,6 @@ export const repoMoveDEBUG = debug('app:repo:move');
 
 // WebSocket
 export const wsDEBUG = debug('app:ws');
+
+// Testing
+export const testDEBUG = debug('app:test');

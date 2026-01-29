@@ -115,8 +115,11 @@ async function startServer() {
       await initDatabases();
     }
 
-    server.listen(port, () => {
-      logger.info({ port }, 'Chess app listening');
+    return new Promise((resolve) => {
+      server.listen(port, () => {
+        logger.info({ port }, 'Chess app listening');
+        resolve(server);
+      });
     });
   } catch (err) {
     logger.fatal({ err }, 'Failed to start server');
@@ -124,4 +127,6 @@ async function startServer() {
   }
 }
 
-startServer();
+// Export for programmatic use (e.g., tests)
+export { server };
+export const serverReady = startServer();
