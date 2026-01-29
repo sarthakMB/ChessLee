@@ -13,7 +13,7 @@
  */
 
 import { Chess } from 'chess.js';
-import { wsDBG } from '../../utils/debug.mjs';
+import { wsDEBUG } from '../../utils/debug.mjs';
 import logger from '../../utils/logger.mjs';
 
 /**
@@ -29,7 +29,7 @@ export function registerGameHandlers(io, socket, gameService) {
 
   // Guard: require authenticated session
   if (!subject?.id) {
-    wsDBG('registerGameHandlers: no subject, skipping registration for socket %s', socket.id);
+    wsDEBUG('registerGameHandlers: no subject, skipping registration for socket %s', socket.id);
     return;
   }
 
@@ -42,7 +42,7 @@ export function registerGameHandlers(io, socket, gameService) {
    * Server responds: game_state event with { fen, turn, moveCount, you: { color } }
    */
   socket.on('join_game', async ({ gameId }) => {
-    wsDBG('join_game: socket=%s player=%s game=%s', socket.id, playerId, gameId);
+    wsDEBUG('join_game: socket=%s player=%s game=%s', socket.id, playerId, gameId);
 
     if (!gameId) {
       socket.emit('error', { message: 'gameId required' });
@@ -52,7 +52,7 @@ export function registerGameHandlers(io, socket, gameService) {
     const result = await gameService.getGame(gameId);
 
     if (!result.success) {
-      wsDBG('join_game: game not found %s', gameId);
+      wsDEBUG('join_game: game not found %s', gameId);
       socket.emit('error', { message: 'Game not found' });
       return;
     }
@@ -62,7 +62,7 @@ export function registerGameHandlers(io, socket, gameService) {
     // Authorization: player must be owner or opponent
     const playerColor = resolvePlayerColor(playerId, game);
     if (!playerColor) {
-      wsDBG('join_game: player %s not in game %s', playerId, gameId);
+      wsDEBUG('join_game: player %s not in game %s', playerId, gameId);
       socket.emit('error', { message: 'You are not a player in this game' });
       return;
     }
@@ -73,7 +73,7 @@ export function registerGameHandlers(io, socket, gameService) {
 
     // Join the Socket.IO room for this game
     socket.join(gameId);
-    wsDBG('join_game: socket %s joined room %s', socket.id, gameId);
+    wsDEBUG('join_game: socket %s joined room %s', socket.id, gameId);
 
     // Extract whose turn it is from FEN (w or b after first space)
     const turn = fen.split(' ')[1]; // 'w' or 'b'
@@ -97,7 +97,7 @@ export function registerGameHandlers(io, socket, gameService) {
    * On error: move_error event to sender only
    */
   socket.on('move', async ({ gameId, from, to, promotion }) => {
-    wsDBG('move: socket=%s player=%s game=%s move=%s-%s', socket.id, playerId, gameId, from, to);
+    wsDEBUG('move: socket=%s player=%s game=%s move=%s-%s', socket.id, playerId, gameId, from, to);
 
     if (!gameId || !from || !to) {
       socket.emit('move_error', { error: 'Missing required fields: gameId, from, to' });
@@ -107,7 +107,7 @@ export function registerGameHandlers(io, socket, gameService) {
     const result = await gameService.makeMove(gameId, playerId, { from, to, promotion });
 
     if (!result.success) {
-      wsDBG('move: rejected error=%s', result.error);
+      wsDEBUG('move: rejected error=%s', result.error);
       socket.emit('move_error', { error: result.error });
       return;
     }
@@ -115,7 +115,7 @@ export function registerGameHandlers(io, socket, gameService) {
     const { move, isGameOver, fen } = result.data;
     const turn = fen.split(' ')[1];
 
-    wsDBG('move: accepted, broadcasting to room %s', gameId);
+    wsDEBUG('move: accepted, broadcasting to room %s', gameId);
 
     // Broadcast confirmed move to ALL players in the room (including sender)
     io.to(gameId).emit('move_made', {
@@ -132,7 +132,7 @@ export function registerGameHandlers(io, socket, gameService) {
     // If game is over, emit game_over with result details
     if (isGameOver) {
       const gameOverResult = determineGameResult(fen);
-      wsDBG('move: game over, result=%o', gameOverResult);
+      wsDEBUG('move: game over, result=%o', gameOverResult);
 
       io.to(gameId).emit('game_over', gameOverResult);
 

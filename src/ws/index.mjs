@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import logger from '../../utils/logger.mjs';
-import { wsDBG } from '../../utils/debug.mjs';
+import { wsDEBUG } from '../../utils/debug.mjs';
 import { gameService } from '../services/index.mjs';
 import { registerGameHandlers } from './gameHandlers.mjs';
 
@@ -30,10 +30,10 @@ export function setupWebSocket(server, sessionMiddleware) {
     const subject = session?.subject;
 
     if (subject) {
-      wsDBG('Socket connected: %s (subject: %s, type: %s)', socket.id, subject.id, subject.type);
+      wsDEBUG('Socket connected: %s (subject: %s, type: %s)', socket.id, subject.id, subject.type);
       logger.info({ socketId: socket.id, subjectId: subject.id, subjectType: subject.type }, 'Socket connected');
     } else {
-      wsDBG('Socket connected: %s (no subject in session)', socket.id);
+      wsDEBUG('Socket connected: %s (no subject in session)', socket.id);
       logger.warn({ socketId: socket.id }, 'Socket connected without subject');
     }
 
@@ -41,7 +41,7 @@ export function setupWebSocket(server, sessionMiddleware) {
     registerGameHandlers(io, socket, gameService);
 
     socket.on('disconnect', (reason) => {
-      wsDBG('Socket disconnected: %s (reason: %s)', socket.id, reason);
+      wsDEBUG('Socket disconnected: %s (reason: %s)', socket.id, reason);
       logger.info({ socketId: socket.id, reason }, 'Socket disconnected');
     });
   });

@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gameService } from '../services/index.mjs';
-import { routesGameDBG } from '../../utils/debug.mjs';
+import { routesGameDEBUG } from '../../utils/debug.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,12 +17,12 @@ const renderError = (res, { status = 404, message = 'Something went wrong.' } = 
 
 const handleRedirect = (req, res, location) => {
   if (req.get('HX-Request')) {
-    routesGameDBG('HTMX redirect to %s', location);
+    routesGameDEBUG('HTMX redirect to %s', location);
     res.set('HX-Redirect', location);
     return res.status(204).end();
   }
 
-  routesGameDBG('HTTP redirect to %s', location);
+  routesGameDEBUG('HTTP redirect to %s', location);
   return res.redirect(303, location);
 };
 
@@ -32,25 +32,25 @@ router.post('/computer', async (req, res) => {
   const subjectId = req.session.subject?.id;
   const subjectType = req.session.subject?.type ?? 'guest';
   const ownerColor = req.body.color;
-  routesGameDBG('body : %O', req.body);
+  routesGameDEBUG('body : %O', req.body);
 
   if (!ownerColor || !['white', 'black'].includes(ownerColor)) {
-    routesGameDBG('Invalid color: %s', ownerColor);
+    routesGameDEBUG('Invalid color: %s', ownerColor);
     return renderError(res, { status: 400, message: 'Color must be "white" or "black".' });
   }
 
-  routesGameDBG('Creating computer game: owner=%s color=%s', subjectId, ownerColor);
+  routesGameDEBUG('Creating computer game: owner=%s color=%s', subjectId, ownerColor);
   const result = await gameService.createGame('computer', subjectId, subjectType, ownerColor, {
     difficulty: 1200,
   });
 
   if (!result.success) {
-    routesGameDBG('Failed to create game: %s', result.error);
+    routesGameDEBUG('Failed to create game: %s', result.error);
     return renderError(res, { status: 500, message: 'Failed to create game.' });
   }
 
   const gameId = result.data.game_id;
-  routesGameDBG('Game created: %s', gameId);
+  routesGameDEBUG('Game created: %s', gameId);
   return handleRedirect(req, res, `/game/${gameId}`);
 });
 
@@ -60,20 +60,20 @@ router.post('/friend', async (req, res) => {
   const ownerColor = req.body.color;
 
   if (!ownerColor || !['white', 'black'].includes(ownerColor)) {
-    routesGameDBG('Invalid color: %s', ownerColor);
+    routesGameDEBUG('Invalid color: %s', ownerColor);
     return renderError(res, { status: 400, message: 'Color must be "white" or "black".' });
   }
 
-  routesGameDBG('Creating friend game: owner=%s color=%s', subjectId, ownerColor);
+  routesGameDEBUG('Creating friend game: owner=%s color=%s', subjectId, ownerColor);
   const result = await gameService.createGame('friend', subjectId, subjectType, ownerColor);
 
   if (!result.success) {
-    routesGameDBG('Failed to create game: %s', result.error);
+    routesGameDEBUG('Failed to create game: %s', result.error);
     return renderError(res, { status: 500, message: 'Failed to create game.' });
   }
 
   const game = result.data;
-  routesGameDBG('Game created: %s joinCode=%s', game.game_id, game.join_code);
+  routesGameDEBUG('Game created: %s joinCode=%s', game.game_id, game.join_code);
 
   if (req.get('HX-Request')) {
     return res.send(
@@ -96,11 +96,11 @@ router.post('/join', async (req, res) => {
     return renderError(res, { status: 400, message: 'Join code is required.' });
   }
 
-  routesGameDBG('Joining game: joinCode=%s player=%s', joinCode, subjectId);
+  routesGameDEBUG('Joining game: joinCode=%s player=%s', joinCode, subjectId);
   const result = await gameService.joinGame(joinCode, subjectId, subjectType);
 
   if (!result.success) {
-    routesGameDBG('Failed to join game: %s', result.error);
+    routesGameDEBUG('Failed to join game: %s', result.error);
     const messages = {
       GAME_NOT_FOUND: 'Game not found. Check your join code.',
       GAME_ALREADY_FULL: 'This game already has two players.',
@@ -110,7 +110,7 @@ router.post('/join', async (req, res) => {
   }
 
   const gameId = result.data.game_id;
-  routesGameDBG('Joined game: %s', gameId);
+  routesGameDEBUG('Joined game: %s', gameId);
   return handleRedirect(req, res, `/game/${gameId}`);
 });
 
@@ -118,10 +118,10 @@ router.get('/:id', async (req, res) => {
   const { id } = req.params;
   const playerId = req.session.subject?.id;
 
-  routesGameDBG('Loading game: %s player=%s', id, playerId);
+  routesGameDEBUG('Loading game: %s player=%s', id, playerId);
   const result = await gameService.getGame(id);
   if (!result.success) {
-    routesGameDBG('Game not found: %s', id);
+    routesGameDEBUG('Game not found: %s', id);
     return renderError(res);
   }
 
@@ -130,11 +130,11 @@ router.get('/:id', async (req, res) => {
   const isOpponent = game.opponent_id === playerId;
 
   if (!isOwner && !isOpponent) {
-    routesGameDBG('Access denied: player=%s not in game=%s', playerId, id);
+    routesGameDEBUG('Access denied: player=%s not in game=%s', playerId, id);
     return renderError(res, { status: 403, message: 'You are not a player in this game.' });
   }
 
-  routesGameDBG('Serving game page: %s', id);
+  routesGameDEBUG('Serving game page: %s', id);
   return sendGameFile(req, res);
 });
 

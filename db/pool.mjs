@@ -17,7 +17,7 @@
 
 import pg from 'pg';
 import { databaseConfig } from '../config/database.mjs';
-import { dbPostgresDBG } from '../utils/debug.mjs';
+import { dbPostgresDEBUG } from '../utils/debug.mjs';
 import logger from '../utils/logger.mjs';
 
 const { Pool } = pg;
@@ -27,7 +27,7 @@ const pool = new Pool(databaseConfig.postgres);
 
 // Log connection events (helpful for debugging)
 pool.on('connect', () => {
-  dbPostgresDBG('New client connected to pool');
+  dbPostgresDEBUG('New client connected to pool');
 });
 
 pool.on('error', (err) => {
@@ -35,15 +35,15 @@ pool.on('error', (err) => {
 });
 
 pool.on('remove', () => {
-  dbPostgresDBG('Client removed from pool');
+  dbPostgresDEBUG('Client removed from pool');
 });
 
 // Graceful shutdown: close all connections when app exits
 const shutdown = async () => {
-  dbPostgresDBG('Closing connection pool...');
+  dbPostgresDEBUG('Closing connection pool...');
   try {
     await pool.end();
-    dbPostgresDBG('Pool closed successfully');
+    dbPostgresDEBUG('Pool closed successfully');
   } catch (err) {
     logger.error({ err }, 'PostgreSQL shutdown error');
   } finally {

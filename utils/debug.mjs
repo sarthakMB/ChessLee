@@ -11,11 +11,11 @@
  *   DEBUG=app:routes:*,app:db:* npm run dev  # Multiple
  *
  * Import what you need:
- *   import { dbPostgresDBG } from '../utils/debug.mjs';
- *   dbPostgresDBG('Connected to pool');
+ *   import { dbPostgresDEBUG } from '../utils/debug.mjs';
+ *   dbPostgresDEBUG('Connected to pool');
  *
- * Naming convention: <layer><Name>DBG
- *   - DBG suffix makes it obvious these are debug statements
+ * Naming convention: <layer><Name>DEBUG
+ *   - DEBUG suffix makes it obvious these are debug statements
  *   - Use for tracing code flow during development
  *   - Use for inspecting variables/state
  *   - NOT for production logging (use logger.mjs instead)
@@ -24,25 +24,25 @@
 import debug from 'debug';
 
 // Database layer
-export const dbPostgresDBG = debug('app:db:postgres');
-export const dbRedisDBG = debug('app:db:redis');
+export const dbPostgresDEBUG = debug('app:db:postgres');
+export const dbRedisDEBUG = debug('app:db:redis');
 
 // Middleware
-export const middlewareDBG = debug('app:middleware');
+export const middlewareDEBUG = debug('app:middleware');
 
 // Routes
-export const routesGameDBG = debug('app:routes:game');
-export const routesAuthDBG = debug('app:routes:auth');
+export const routesGameDEBUG = debug('app:routes:game');
+export const routesAuthDEBUG = debug('app:routes:auth');
 
 // Services
-export const servicesGameDBG = debug('app:services:game');
-export const servicesAuthDBG = debug('app:services:auth');
+export const servicesGameDEBUG = debug('app:services:game');
+export const servicesAuthDEBUG = debug('app:services:auth');
 
 // Repositories (rarely needed, but available)
-export const repoUserDBG = debug('app:repo:user');
-export const repoGuestDBG = debug('app:repo:guest');
-export const repoGameDBG = debug('app:repo:game');
-export const repoMoveDBG = debug('app:repo:move');
+export const repoUserDEBUG = debug('app:repo:user');
+export const repoGuestDEBUG = debug('app:repo:guest');
+export const repoGameDEBUG = debug('app:repo:game');
+export const repoMoveDEBUG = debug('app:repo:move');
 
 // WebSocket
-export const wsDBG = debug('app:ws');
+export const wsDEBUG = debug('app:ws');

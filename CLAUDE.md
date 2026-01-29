@@ -138,7 +138,7 @@ DEBUG=app:services:*     # Services only
 DEBUG=app:routes:*       # Routes only
 ```
 
-Debug instances use the `DBG` suffix for clarity (e.g., `servicesGameDBG`, `routesGameDBG`).
+Debug instances use the `DEBUG` suffix for clarity (e.g., `servicesGameDEBUG`, `routesGameDEBUG`).
 
 ### Pino Log Levels
 

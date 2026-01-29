@@ -9,7 +9,7 @@
  */
 
 import { Chess } from 'chess.js';
-import { servicesGameDBG } from '../../utils/debug.mjs';
+import { servicesGameDEBUG } from '../../utils/debug.mjs';
 
 const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const VALID_MODES = ['computer', 'friend'];
@@ -32,10 +32,10 @@ export class GameService {
    * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
    */
   async createGame(mode, ownerId, ownerType, ownerColor, options = {}) {
-    servicesGameDBG('createGame: mode=%s owner=%s color=%s', mode, ownerId, ownerColor);
+    servicesGameDEBUG('createGame: mode=%s owner=%s color=%s', mode, ownerId, ownerColor);
 
     if (!VALID_MODES.includes(mode)) {
-      servicesGameDBG('createGame: invalid mode %s', mode);
+      servicesGameDEBUG('createGame: invalid mode %s', mode);
       return { success: false, error: 'INVALID_MODE' };
     }
 
@@ -65,13 +65,13 @@ export class GameService {
 
     // Retry once on join code collision
     if (!result.success && result.error === 'JOIN_CODE_TAKEN') {
-      servicesGameDBG('createGame: join code collision, retrying');
+      servicesGameDEBUG('createGame: join code collision, retrying');
       gameObject.join_code = this._generateJoinCode();
       return this.gameRepo.insertGame(gameObject);
     }
 
     if (result.success) {
-      servicesGameDBG('createGame: created game_id=%s', result.data.game_id);
+      servicesGameDEBUG('createGame: created game_id=%s', result.data.game_id);
     }
     return result;
   }
@@ -83,13 +83,13 @@ export class GameService {
    * @returns {Promise<{success: true, data: {game, moves, fen, moveCount}} | {success: false, error: string}>}
    */
   async getGame(gameId) {
-    servicesGameDBG('getGame: %s', gameId);
+    servicesGameDEBUG('getGame: %s', gameId);
     const gameResult = await this.gameRepo.findGame('game_id', gameId);
     if (!gameResult.success) return gameResult;
 
     const game = gameResult.data;
     if (!game || game.is_deleted) {
-      servicesGameDBG('getGame: not found or deleted');
+      servicesGameDEBUG('getGame: not found or deleted');
       return { success: false, error: 'GAME_NOT_FOUND' };
     }
 
@@ -99,7 +99,7 @@ export class GameService {
     const moves = movesResult.data;
     const fen = moves.length > 0 ? moves[moves.length - 1].fen_after : STARTING_FEN;
 
-    servicesGameDBG('getGame: loaded with %d moves, fen=%s', moves.length, fen.split(' ')[0]);
+    servicesGameDEBUG('getGame: loaded with %d moves, fen=%s', moves.length, fen.split(' ')[0]);
     return {
       success: true,
       data: { game, moves, fen, moveCount: moves.length },
@@ -132,23 +132,23 @@ export class GameService {
    * @returns {Promise<{success: true, data: Object} | {success: false, error: string}>}
    */
   async joinGame(joinCode, playerId, playerType) {
-    servicesGameDBG('joinGame: code=%s player=%s', joinCode, playerId);
+    servicesGameDEBUG('joinGame: code=%s player=%s', joinCode, playerId);
     const gameResult = await this.getGameByJoinCode(joinCode);
     if (!gameResult.success) return gameResult;
 
     const game = gameResult.data;
 
     if (game.opponent_id) {
-      servicesGameDBG('joinGame: game already full');
+      servicesGameDEBUG('joinGame: game already full');
       return { success: false, error: 'GAME_ALREADY_FULL' };
     }
 
     if (game.owner_id === playerId) {
-      servicesGameDBG('joinGame: cannot join own game');
+      servicesGameDEBUG('joinGame: cannot join own game');
       return { success: false, error: 'CANNOT_JOIN_OWN_GAME' };
     }
 
-    servicesGameDBG('joinGame: adding opponent to game_id=%s', game.game_id);
+    servicesGameDEBUG('joinGame: adding opponent to game_id=%s', game.game_id);
     return this.gameRepo.updateGame(game.game_id, {
       opponent_id: playerId,
       opponent_type: playerType,
@@ -165,7 +165,7 @@ export class GameService {
    * @returns {Promise<{success: true, data: {move, isGameOver, fen}} | {success: false, error: string}>}
    */
   async makeMove(gameId, playerId, moveInput) {
-    servicesGameDBG('makeMove: game=%s player=%s move=%o', gameId, playerId, moveInput);
+    servicesGameDEBUG('makeMove: game=%s player=%s move=%o', gameId, playerId, moveInput);
     const gameResult = await this.getGame(gameId);
     if (!gameResult.success) return gameResult;
 
@@ -173,20 +173,20 @@ export class GameService {
 
     const playerColor = this._resolvePlayerColor(playerId, game);
     if (!playerColor) {
-      servicesGameDBG('makeMove: player not in game');
+      servicesGameDEBUG('makeMove: player not in game');
       return { success: false, error: 'PLAYER_NOT_IN_GAME' };
     }
 
     const chess = new Chess(fen);
 
     if (chess.turn() !== playerColor) {
-      servicesGameDBG('makeMove: not player turn (turn=%s, player=%s)', chess.turn(), playerColor);
+      servicesGameDEBUG('makeMove: not player turn (turn=%s, player=%s)', chess.turn(), playerColor);
       return { success: false, error: 'NOT_YOUR_TURN' };
     }
 
     const moveResult = chess.move(moveInput);
     if (!moveResult) {
-      servicesGameDBG('makeMove: invalid move');
+      servicesGameDEBUG('makeMove: invalid move');
       return { success: false, error: 'INVALID_MOVE' };
     }
 
@@ -204,7 +204,7 @@ export class GameService {
     if (!insertResult.success) return insertResult;
 
     const isGameOver = chess.isGameOver();
-    servicesGameDBG('makeMove: success move_number=%d gameOver=%s', moveRecord.move_number, isGameOver);
+    servicesGameDEBUG('makeMove: success move_number=%d gameOver=%s', moveRecord.move_number, isGameOver);
 
     return {
       success: true,

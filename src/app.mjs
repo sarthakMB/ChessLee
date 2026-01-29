@@ -13,7 +13,7 @@ import { setupWebSocket } from './ws/index.mjs';
 
 import requestLogger from '../utils/request_logger.mjs';
 import logger from '../utils/logger.mjs';
-import { middlewareDBG } from '../utils/debug.mjs';
+import { middlewareDEBUG } from '../utils/debug.mjs';
 import { redisClient, initDatabases } from '../db/index.mjs';
 import { guestRepository } from './repositories/index.mjs';
 
@@ -72,13 +72,13 @@ const ensureSubject = async (req, res, next) => {
 
   const subject = req.session.subject;
   if (subject && subject.id) {
-    middlewareDBG('Subject exists: %s (%s)', subject.id, subject.type);
+    middlewareDEBUG('Subject exists: %s (%s)', subject.id, subject.type);
     if(!subject.type) logger.warn('Subject type missing for subject %s', subject.id);
     return next();
   }
 
   // Insert guest into DB — DB generates T-prefixed ID
-  middlewareDBG('Creating new guest for session %s', req.sessionID);
+  middlewareDEBUG('Creating new guest for session %s', req.sessionID);
   const result = await guestRepository.insertGuest({
     is_deleted: false,
     is_test: false
@@ -89,7 +89,7 @@ const ensureSubject = async (req, res, next) => {
     return res.status(500).json({ error: 'Failed to create guest' });
   }
 
-  middlewareDBG('Guest created: %s', result.data.guest_id);
+  middlewareDEBUG('Guest created: %s', result.data.guest_id);
   req.session.subject = { id: result.data.guest_id, type: 'guest' };
   return next();
 };
