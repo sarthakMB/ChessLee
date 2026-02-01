@@ -87,6 +87,54 @@ npm run test:ws:auth      # Authorization tests
 npm run dump-schema  # Export PostgreSQL schema to db/schema.sql
 ```
 
+## Running the Application
+
+### Local Development (Recommended)
+
+Run databases in Docker, app with nodemon for hot reload:
+
+```bash
+# Terminal 1: Start PostgreSQL and Redis
+docker compose up postgres redis
+
+# Terminal 2: Run the app with hot reload
+npm run dev
+```
+
+### Local Docker (Full Stack)
+
+Run everything in Docker:
+
+```bash
+docker compose up                    # Foreground (see logs)
+docker compose up -d                 # Detached (background)
+docker compose logs -f app           # Follow app logs
+docker compose down                  # Stop all services
+```
+
+**Note:** Logs in Docker may show JSON format. To get colored output (don't know if this works):
+```bash
+FORCE_COLOR=1 docker compose up 
+```
+
+### Production
+
+Uses `docker-compose.prod.yml` overrides (no exposed DB ports, restart policies):
+
+```bash
+# Create .env with production secrets
+echo "SESSION_SECRET=$(openssl rand -hex 32)" > .env
+
+# Start with production config
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+# Run migrations
+docker compose exec app npm run migrate
+
+# View logs
+docker compose logs -f app
+```
+
 ## Environment Variables
 
 | Variable | Required | Default | Notes |
