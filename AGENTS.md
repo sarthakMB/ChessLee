@@ -89,51 +89,92 @@ npm run dump-schema  # Export PostgreSQL schema to db/schema.sql
 
 ## Running the Application
 
-### Local Development (Recommended)
+### Local Development
 
-Run databases in Docker, app with nodemon for hot reload:
+Run everything in Docker (recommended for parity with production):
+
+```bash
+cp .env.example .env                 # First time only
+docker compose up                    # Foreground (see logs)
+docker compose up -d                 # Detached (background)
+docker compose logs -f --no-log-prefix app  # Follow app logs
+docker compose down                  # Stop all services
+```
+
+**Alternative:** Run databases in Docker, app with nodemon for hot reload:
 
 ```bash
 # Terminal 1: Start PostgreSQL and Redis
 docker compose up postgres redis
 
-# Terminal 2: Run the app with hot reload
+# Terminal 2: Run the app (requires Node.js installed locally)
+# Note: Update .env to use localhost instead of Docker service names
 npm run dev
 ```
 
-### Local Docker (Full Stack)
+---
 
-Run everything in Docker:
+## VPS Deployment
 
-```bash
-docker compose up                    # Foreground (see logs)
-docker compose up -d                 # Detached (background)
-docker compose logs -f app           # Follow app logs
-docker compose down                  # Stop all services
-```
+### Infrastructure Setup
 
-**Note:** Logs in Docker may show JSON format. To get colored output (don't know if this works):
-```bash
-FORCE_COLOR=1 docker compose up 
-```
+- **VPS:** AWS Lightsail (or any Ubuntu VPS)
+- **Reverse Proxy:** Nginx (handles SSL termination, WebSocket upgrade)
+- **SSL:** Let's Encrypt via Certbot (auto-renewal)
+- **App:** Docker Compose (app + postgres + redis)
 
-### Production
-
-Uses `docker-compose.prod.yml` overrides (no exposed DB ports, restart policies):
+### First-Time Setup
 
 ```bash
-# Create .env with production secrets
-echo "SESSION_SECRET=$(openssl rand -hex 32)" > .env
+# 1. SSH into VPS
+ssh -i your-key.pem ubuntu@your-vps-ip
 
-# Start with production config
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# 2. Create app directory
+sudo mkdir -p /opt/apps
+sudo chown $USER:$USER /opt/apps
 
-# Run migrations
-docker compose exec app npm run migrate
+# 3. Clone repository
+cd /opt/apps
+git clone https://github.com/YOUR_USERNAME/NeonChess.git
+cd NeonChess
 
-# View logs
-docker compose logs -f app
+# 4. Run setup script (installs Docker, Nginx, SSL)
+./deploy/setup-vps.sh yourdomain.com
+
+# 5. Log out and back in (for Docker group)
+exit
+ssh -i your-key.pem ubuntu@your-vps-ip
+
+# 6. Deploy the app
+cd /opt/apps/NeonChess
+./deploy/test_deploy.sh your-session-secret
 ```
+
+### Subsequent Deployments
+
+```bash
+ssh -i your-key.pem ubuntu@your-vps-ip
+cd /opt/apps/NeonChess
+./deploy/test_deploy.sh your-session-secret
+```
+
+### Deploy Scripts
+
+| Script | Description |
+|--------|-------------|
+| `deploy/setup-vps.sh <domain>` | One-time setup: Docker, Nginx, SSL, firewall |
+| `deploy/test_deploy.sh <secret>` | Deploy with dev config (pretty logs, colors) |
+| `deploy/deploy.sh <secret>` | Deploy with prod config (JSON logs, restart policies) |
+
+### Viewing Logs on VPS
+
+```bash
+docker compose logs -f --no-log-prefix app
+```
+
+### Multi-App VPS Setup
+
+For running multiple apps on one VPS with nginx routing by domain, see `dev_private/deploy_repo/vps-infra/`. This separates infrastructure (nginx, SSL) from app deployment.
 
 ## Environment Variables
 
