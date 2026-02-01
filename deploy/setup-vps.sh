@@ -56,8 +56,8 @@ echo ">>> Configuring Nginx..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 NGINX_CONF="$SCRIPT_DIR/nginx-chess-app.conf"
 
-# Replace domain placeholder and copy
-sed "s/yourdomain.com/$DOMAIN/g" "$NGINX_CONF" | sudo tee /etc/nginx/sites-available/chess-app > /dev/null
+# Replace domain placeholders (both @ and www)
+sed -e "s/yourdomain.com/$DOMAIN/g" -e "s/www.yourdomain.com/www.$DOMAIN/g" "$NGINX_CONF" | sudo tee /etc/nginx/sites-available/chess-app > /dev/null
 
 # Enable site
 sudo ln -sf /etc/nginx/sites-available/chess-app /etc/nginx/sites-enabled/
@@ -70,10 +70,10 @@ sudo systemctl reload nginx
 echo ">>> Nginx configured for $DOMAIN"
 
 # Setup SSL
-echo ">>> Setting up SSL certificate..."
-sudo certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --email admin@"$DOMAIN" || {
+echo ">>> Setting up SSL certificate for $DOMAIN and www.$DOMAIN..."
+sudo certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --non-interactive --agree-tos --email admin@"$DOMAIN" || {
     echo "Certbot failed. You may need to run manually:"
-    echo "  sudo certbot --nginx -d $DOMAIN"
+    echo "  sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
 }
 
 # Verify auto-renewal
