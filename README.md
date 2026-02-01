@@ -1,6 +1,10 @@
-# Chess Lee
+# Neon Chess
 
 A real-time multiplayer chess platform built with Node.js, featuring WebSocket-based gameplay, server-side move validation, and clean architecture patterns.
+
+Started out as a side project to play chess and variants with friends over Zoom. Now it's a sandbox for experimenting with AI-assisted learning (something I really want to expore), building a chess coaching system that optimizes for insight density (Eurekas per Minute). The goal: figure out how to compress months of pattern recognition into weeks.
+
+Chess engines tell you the best move. They don't teach you **why** it's good or how **you** could have thought of that yourself and then help you internalize the pattern. Current teaching methods are good but let us, for one second, compare to the best case scenario — a Super GM personally invested in your progress (imagine being a GM's kid).
 
 ![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
@@ -45,20 +49,20 @@ A real-time multiplayer chess platform built with Node.js, featuring WebSocket-b
 ┌────────────────────────────▼────────────────────────────────┐
 │                     Express Server                          │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │                    Routes (thin)                     │    │
-│  │         /game/create  /game/join  /game/move         │    │
-│  └────────────────────────┬────────────────────────────┘    │
-│                           │                                  │
-│  ┌────────────────────────▼────────────────────────────┐    │
-│  │                    Services                          │    │
-│  │    GameService (validation, game logic, chess.js)    │    │
-│  │    AuthService (registration, login)                 │    │
-│  └────────────────────────┬────────────────────────────┘    │
-│                           │                                  │
-│  ┌────────────────────────▼────────────────────────────┐    │
-│  │                  Repositories                        │    │
-│  │   GameRepository  UserRepository  MoveRepository     │    │
-│  └────────────────────────┬────────────────────────────┘    │
+│  │                    Routes (thin)                    │    │
+│  │         /game/create  /game/join  /game/move        │    │
+│  └─────────────────────────┬───────────────────────────┘    │
+│                            │                                │
+│  ┌─────────────────────────▼───────────────────────────┐    │
+│  │                    Services                         │    │
+│  │    GameService (validation, game logic, chess.js)   │    │
+│  │    AuthService (registration, login)                │    │
+│  └─────────────────────────┬───────────────────────────┘    │
+│                            │                                │
+│  ┌─────────────────────────▼───────────────────────────┐    │
+│  │                  Repositories                       │    │
+│  │   GameRepository  UserRepository  MoveRepository    │    │
+│  └─────────────────────────┬───────────────────────────┘    │
 └────────────────────────────┼────────────────────────────────┘
                              │
         ┌────────────────────┼────────────────────┐
@@ -86,8 +90,8 @@ The codebase follows a **Repository + Service pattern**:
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/chess-lee.git
-cd chess-lee
+git clone https://github.com/sarthakMB/NeonChess.git
+cd neon-chess
 
 # Copy environment file
 cp .env.example .env
