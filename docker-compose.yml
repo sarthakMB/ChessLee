@@ -3,12 +3,7 @@ services:
     build: .
     ports:
       - "3000:3000"
-    environment:
-      NODE_ENV: development
-      PORT: 3000
-      DATABASE_URL: postgres://chess_user:chess_password@postgres:5432/chess_dev
-      REDIS_URL: redis://redis:6379
-      SESSION_SECRET: dev-secret-change-in-production
+    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
