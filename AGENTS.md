@@ -135,8 +135,8 @@ sudo chown $USER:$USER /opt/apps
 
 # 3. Clone repository
 cd /opt/apps
-git clone https://github.com/YOUR_USERNAME/NeonChess.git
-cd NeonChess
+git clone https://github.com/YOUR_USERNAME/ChessLee.git
+cd ChessLee
 
 # 4. Run setup script (installs Docker, Nginx, SSL)
 ./deploy/setup-vps.sh yourdomain.com
@@ -146,7 +146,7 @@ exit
 ssh -i your-key.pem ubuntu@your-vps-ip
 
 # 6. Deploy the app
-cd /opt/apps/NeonChess
+cd /opt/apps/ChessLee
 ./deploy/test_deploy.sh your-session-secret
 ```
 
@@ -154,7 +154,7 @@ cd /opt/apps/NeonChess
 
 ```bash
 ssh -i your-key.pem ubuntu@your-vps-ip
-cd /opt/apps/NeonChess
+cd /opt/apps/ChessLee
 ./deploy/test_deploy.sh your-session-secret
 ```
 

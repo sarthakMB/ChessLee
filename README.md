@@ -1,4 +1,4 @@
-# Neon Chess
+# Chess Lee
 
 A real-time multiplayer chess platform built with Node.js, featuring WebSocket-based gameplay, server-side move validation, and clean architecture patterns.
 
@@ -90,8 +90,8 @@ The codebase follows a **Repository + Service pattern**:
 
 ```bash
 # Clone the repository
-git clone https://github.com/sarthakMB/NeonChess.git
-cd neon-chess
+git clone https://github.com/sarthakMB/ChessLee.git
+cd ChessLee
 
 # Copy environment file
 cp .env.example .env
